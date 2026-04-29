@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Islamic AI Content Factory</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&family=Noto+Nastaliq+Urdu&display=swap" rel="stylesheet">
+    <style>
+        :root { --gold: #FFD700; --dark: #111; --card: #1a1a1a; }
+        body { background: var(--dark); color: white; font-family: 'Poppins', sans-serif; text-align: center; padding: 10px; }
+        .batch-controls { background: #222; padding: 20px; border-radius: 15px; margin-bottom: 20px; border: 1px solid var(--gold); }
+        input { padding: 10px; width: 80%; margin: 10px 0; border-radius: 5px; border: none; }
+        button { padding: 12px 20px; background: var(--gold); border: none; cursor: pointer; border-radius: 6px; font-weight: bold; margin: 5px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px; }
+        .reel-card { background: var(--card); border: 1px solid #333; padding: 15px; border-radius: 12px; text-align: left; }
+        #canvas-stage { display: none; } /* Hidden drawing area */
+        .loading { color: var(--gold); display: none; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="batch-controls">
+    <h2>🤖 Islamic AI Content Factory</h2>
+    <input type="password" id="apiKey" placeholder="Paste Gemini API Key Here">
+    <br>
+    <button onclick="generateBatch()">🚀 Generate 5 New Posts</button>
+    <p class="loading" id="loader">AI is writing content... Please wait...</p>
+</div>
+
+<div id="contentGrid" class="grid"></div>
+
+<canvas id="canvas-stage" width="1080" height="1350"></canvas>
+
+<script>
+async function generateBatch() {
+    const key = document.getElementById('apiKey').value.trim();
+    if(!key) return alert("Please paste your API Key first!");
+    
+    const loader = document.getElementById('loader');
+    loader.style.display = "block";
+    loader.innerText = "Connecting to Gemini AI...";
+
+    // Updated to the latest stable model version
+    const apiURL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`;
+
+    const prompt = "Generate 5 Islamic Quiz questions. Return ONLY a valid JSON array. Do not include markdown or backticks. Format: [{\"en\":{\"q\":\"Question?\",\"a\":\"A\",\"options\":{\"A\":\"Ans1\",\"B\":\"Ans2\",\"C\":\"Ans3\",\"D\":\"Ans4\"},\"exp\":\"Explanation\"},\"ur\":{\"q\":\"سوال؟\",\"a\":\"A\",\"options\":{\"A\":\"جواب1\",\"B\":\"جواب2\",\"C\":\"جواب3\",\"D\":\"جواب4\"},\"exp\":\"وضاحت\"},\"hi\":{\"q\":\"Sawal?\",\"a\":\"A\",\"options\":{\"A\":\"Jawab1\",\"B\":\"Jawab2\",\"C\":\"Jawab3\",\"D\":\"Jawab4\"},\"exp\":\"Explanation\"}}]";
+
+    try {
+        const response = await fetch(apiURL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                contents: [{ parts: [{ text: prompt }] }],
+                generationConfig: { response_mime_type: "application/json" } // Forces JSON output
+            })
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error.message || "API Error");
+        }
+
+        const result = await response.json();
+        const rawText = result.candidates[0].content.parts[0].text;
+        
+        currentBatch = JSON.parse(rawText);
+        displayBatch();
+        loader.style.display = "none";
+
+    } catch (e) {
+        console.error("FULL ERROR:", e);
+        loader.innerText = "❌ Error: " + e.message;
+        alert("System Message: " + e.message);
+    }
+}</script>
+</body>
+</html>
