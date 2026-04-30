@@ -13,8 +13,8 @@
         button { padding: 12px 20px; background: var(--gold); border: none; cursor: pointer; border-radius: 6px; font-weight: bold; margin: 5px; color: black; }
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px; }
         .reel-card { background: var(--card); border: 1px solid #333; padding: 15px; border-radius: 12px; text-align: left; }
-        #canvas-stage { display: none; }
         .loading { color: var(--gold); display: none; font-weight: bold; margin-top: 10px; }
+        .urdu-text { font-family: 'Noto Nastaliq Urdu', serif; direction: rtl; text-align: right; color: #00ffcc; line-height: 1.8; }
     </style>
 </head>
 <body>
@@ -29,10 +29,8 @@
 
 <div id="contentGrid" class="grid"></div>
 
-<canvas id="canvas-stage" width="1080" height="1350"></canvas>
-
 <script>
-let currentBatch = []; // Stores the AI response
+let currentBatch = [];
 
 async function generateBatch() {
     const key = document.getElementById('apiKey').value.trim();
@@ -42,18 +40,23 @@ async function generateBatch() {
     const grid = document.getElementById('contentGrid');
     
     loader.style.display = "block";
-    loader.innerText = "Connecting to Gemini AI...";
+    loader.innerText = "Connecting to Gemini 3 AI...";
     grid.innerHTML = ""; 
 
-const apiURL = `https://generativelanguage.googleapis.com/v1/models/gemini-3-flash-preview:generateContent?key=${key}`;
-    const prompt = "Generate 5 Islamic Quiz questions. Return ONLY a valid JSON array. Do not include markdown or backticks. Format: [{\"en\":{\"q\":\"Question?\",\"a\":\"A\",\"options\":{\"A\":\"Ans1\",\"B\":\"Ans2\",\"C\":\"Ans3\",\"D\":\"Ans4\"},\"exp\":\"Explanation\"},\"ur\":{\"q\":\"سوال؟\",\"a\":\"A\",\"options\":{\"A\":\"جواب1\",\"B\":\"جواب2\",\"C\":\"جواب3\",\"D\":\"جواب4\"},\"exp\":\"وضاحت\"},\"hi\":{\"q\":\"Sawal?\",\"a\":\"A\",\"options\":{\"A\":\"Jawab1\",\"B\":\"Jawab2\",\"C\":\"Jawab3\",\"D\":\"Jawab4\"},\"exp\":\"Explanation\"}}]";
+    // FIXED URL: Using v1beta and gemini-3-flash
+    const apiURL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash:generateContent?key=${key}`;
+
+    const prompt = "Generate 5 Islamic Quiz questions. Return ONLY a valid JSON array. Format: [{\"en\":{\"q\":\"Question?\",\"a\":\"A\",\"options\":{\"A\":\"Ans1\",\"B\":\"Ans2\",\"C\":\"Ans3\",\"D\":\"Ans4\"},\"exp\":\"Explanation\"},\"ur\":{\"q\":\"سوال؟\",\"a\":\"A\",\"options\":{\"A\":\"جواب1\",\"B\":\"جواب2\",\"C\":\"جواب3\",\"D\":\"جواب4\"},\"exp\":\"وضاحت\"},\"hi\":{\"q\":\"Sawal?\",\"a\":\"A\",\"options\":{\"A\":\"Jawab1\",\"B\":\"Jawab2\",\"C\":\"Jawab3\",\"D\":\"Jawab4\"},\"exp\":\"Explanation\"}}]";
 
     try {
         const response = await fetch(apiURL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                contents: [{ parts: [{ text: prompt }] }]
+                contents: [{ parts: [{ text: prompt }] }],
+                generationConfig: {
+                    response_mime_type: "application/json" // Forces AI to give clean data
+                }
             })
         });
 
@@ -81,8 +84,11 @@ function displayBatch() {
     grid.innerHTML = currentBatch.map((item, i) => `
         <div class="reel-card">
             <h4 style="color:gold">Quiz #${i+1}</h4>
-            <p><b>Q:</b> ${item.en.q}</p>
-            <p style="font-size: 0.8em; color: #bbb;">${item.hi.q}</p>
+            <p><b>EN:</b> ${item.en.q}</p>
+            <p class="urdu-text">${item.ur.q}</p>
+            <p style="font-size: 0.8em; color: #bbb;"><b>HI:</b> ${item.hi.q}</p>
+            <hr style="border: 0.1px solid #333;">
+            <p>✅ <b>Ans:</b> ${item.en.a}) ${item.en.options[item.en.a]}</p>
             <button onclick="copyCaption(${i})">📝 Copy Caption</button>
         </div>
     `).join('');
@@ -90,7 +96,7 @@ function displayBatch() {
 
 function copyCaption(i) {
     const item = currentBatch[i];
-    const text = `📌 Quiz: ${item.en.q}\n\n✅ Answer: ${item.en.options[item.en.a]}\n\n💡 Info: ${item.en.exp}\n\n#islamicquiz #deen #knowledge`;
+    const text = `📌 Quiz: ${item.en.q}\n\n✅ Answer: ${item.en.a}) ${item.en.options[item.en.a]}\n\n💡 Info: ${item.en.exp}\n\n#islamicquiz #deen #knowledge`;
     navigator.clipboard.writeText(text);
     alert("Caption Copied!");
 }
