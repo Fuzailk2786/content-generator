@@ -32,16 +32,16 @@
 <canvas id="canvas-stage" width="1080" height="1350"></canvas>
 
 <script>
-async function generateBatch() {
+   async function generateBatch() {
     const key = document.getElementById('apiKey').value.trim();
     if(!key) return alert("Please paste your API Key first!");
     
     const loader = document.getElementById('loader');
     loader.style.display = "block";
-    loader.innerText = "Connecting to Gemini AI...";
+    loader.innerText = "Connecting to Gemini 2.5 AI...";
 
-    // Updated to the latest stable model version
-    const apiURL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`;
+    // UPDATED URL: Using v1 stable and Gemini 2.5 Flash
+    const apiURL = `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${key}`;
 
     const prompt = "Generate 5 Islamic Quiz questions. Return ONLY a valid JSON array. Do not include markdown or backticks. Format: [{\"en\":{\"q\":\"Question?\",\"a\":\"A\",\"options\":{\"A\":\"Ans1\",\"B\":\"Ans2\",\"C\":\"Ans3\",\"D\":\"Ans4\"},\"exp\":\"Explanation\"},\"ur\":{\"q\":\"سوال؟\",\"a\":\"A\",\"options\":{\"A\":\"جواب1\",\"B\":\"جواب2\",\"C\":\"جواب3\",\"D\":\"جواب4\"},\"exp\":\"وضاحت\"},\"hi\":{\"q\":\"Sawal?\",\"a\":\"A\",\"options\":{\"A\":\"Jawab1\",\"B\":\"Jawab2\",\"C\":\"Jawab3\",\"D\":\"Jawab4\"},\"exp\":\"Explanation\"}}]";
 
@@ -51,13 +51,17 @@ async function generateBatch() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 contents: [{ parts: [{ text: prompt }] }],
-                generationConfig: { response_mime_type: "application/json" } // Forces JSON output
+                generationConfig: { 
+                    response_mime_type: "application/json",
+                    temperature: 0.7
+                }
             })
         });
 
         if (!response.ok) {
             const errorData = await response.json();
-            throw new Error(errorData.error.message || "API Error");
+            // This will tell us if the key is wrong or the model is unavailable
+            throw new Error(errorData.error.message || "API Connection Failed");
         }
 
         const result = await response.json();
@@ -68,10 +72,12 @@ async function generateBatch() {
         loader.style.display = "none";
 
     } catch (e) {
-        console.error("FULL ERROR:", e);
+        console.error("DEBUG INFO:", e);
         loader.innerText = "❌ Error: " + e.message;
         alert("System Message: " + e.message);
     }
+}
+
 }</script>
 </body>
 </html>
