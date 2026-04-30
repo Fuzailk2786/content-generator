@@ -9,12 +9,12 @@
         :root { --gold: #FFD700; --dark: #111; --card: #1a1a1a; }
         body { background: var(--dark); color: white; font-family: 'Poppins', sans-serif; text-align: center; padding: 10px; }
         .batch-controls { background: #222; padding: 20px; border-radius: 15px; margin-bottom: 20px; border: 1px solid var(--gold); }
-        input { padding: 10px; width: 80%; margin: 10px 0; border-radius: 5px; border: none; }
-        button { padding: 12px 20px; background: var(--gold); border: none; cursor: pointer; border-radius: 6px; font-weight: bold; margin: 5px; }
+        input { padding: 10px; width: 80%; margin: 10px 0; border-radius: 5px; border: none; background: #333; color: white; }
+        button { padding: 12px 20px; background: var(--gold); border: none; cursor: pointer; border-radius: 6px; font-weight: bold; margin: 5px; color: black; }
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px; }
         .reel-card { background: var(--card); border: 1px solid #333; padding: 15px; border-radius: 12px; text-align: left; }
-        #canvas-stage { display: none; } /* Hidden drawing area */
-        .loading { color: var(--gold); display: none; font-weight: bold; }
+        #canvas-stage { display: none; }
+        .loading { color: var(--gold); display: none; font-weight: bold; margin-top: 10px; }
     </style>
 </head>
 <body>
@@ -32,16 +32,20 @@
 <canvas id="canvas-stage" width="1080" height="1350"></canvas>
 
 <script>
-   async function generateBatch() {
+let currentBatch = []; // Stores the AI response
+
+async function generateBatch() {
     const key = document.getElementById('apiKey').value.trim();
     if(!key) return alert("Please paste your API Key first!");
     
     const loader = document.getElementById('loader');
+    const grid = document.getElementById('contentGrid');
+    
     loader.style.display = "block";
-    loader.innerText = "Connecting to Gemini 2.5 AI...";
+    loader.innerText = "Connecting to Gemini AI...";
+    grid.innerHTML = ""; 
 
-    // UPDATED URL: Using v1 stable and Gemini 2.5 Flash
-    const apiURL = `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${key}`;
+    const apiURL = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${key}`;
 
     const prompt = "Generate 5 Islamic Quiz questions. Return ONLY a valid JSON array. Do not include markdown or backticks. Format: [{\"en\":{\"q\":\"Question?\",\"a\":\"A\",\"options\":{\"A\":\"Ans1\",\"B\":\"Ans2\",\"C\":\"Ans3\",\"D\":\"Ans4\"},\"exp\":\"Explanation\"},\"ur\":{\"q\":\"سوال؟\",\"a\":\"A\",\"options\":{\"A\":\"جواب1\",\"B\":\"جواب2\",\"C\":\"جواب3\",\"D\":\"جواب4\"},\"exp\":\"وضاحت\"},\"hi\":{\"q\":\"Sawal?\",\"a\":\"A\",\"options\":{\"A\":\"Jawab1\",\"B\":\"Jawab2\",\"C\":\"Jawab3\",\"D\":\"Jawab4\"},\"exp\":\"Explanation\"}}]";
 
@@ -50,17 +54,12 @@
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                contents: [{ parts: [{ text: prompt }] }],
-                generationConfig: { 
-                    response_mime_type: "application/json",
-                    temperature: 0.7
-                }
+                contents: [{ parts: [{ text: prompt }] }]
             })
         });
 
         if (!response.ok) {
             const errorData = await response.json();
-            // This will tell us if the key is wrong or the model is unavailable
             throw new Error(errorData.error.message || "API Connection Failed");
         }
 
@@ -74,10 +73,28 @@
     } catch (e) {
         console.error("DEBUG INFO:", e);
         loader.innerText = "❌ Error: " + e.message;
-        alert("System Message: " + e.message);
+        alert("Error: " + e.message);
     }
 }
 
-}</script>
+function displayBatch() {
+    const grid = document.getElementById('contentGrid');
+    grid.innerHTML = currentBatch.map((item, i) => `
+        <div class="reel-card">
+            <h4 style="color:gold">Quiz #${i+1}</h4>
+            <p><b>Q:</b> ${item.en.q}</p>
+            <p style="font-size: 0.8em; color: #bbb;">${item.hi.q}</p>
+            <button onclick="copyCaption(${i})">📝 Copy Caption</button>
+        </div>
+    `).join('');
+}
+
+function copyCaption(i) {
+    const item = currentBatch[i];
+    const text = `📌 Quiz: ${item.en.q}\n\n✅ Answer: ${item.en.options[item.en.a]}\n\n💡 Info: ${item.en.exp}\n\n#islamicquiz #deen #knowledge`;
+    navigator.clipboard.writeText(text);
+    alert("Caption Copied!");
+}
+</script>
 </body>
 </html>
