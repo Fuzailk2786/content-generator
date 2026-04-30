@@ -45,8 +45,7 @@ async function generateBatch() {
     loader.innerText = "Connecting to Gemini AI...";
     grid.innerHTML = ""; 
 
-const apiURL = `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${key}`;
-    
+const apiURL = `https://generativelanguage.googleapis.com/v1/models/gemini-3-flash-preview:generateContent?key=${key}`;
     const prompt = "Generate 5 Islamic Quiz questions. Return ONLY a valid JSON array. Do not include markdown or backticks. Format: [{\"en\":{\"q\":\"Question?\",\"a\":\"A\",\"options\":{\"A\":\"Ans1\",\"B\":\"Ans2\",\"C\":\"Ans3\",\"D\":\"Ans4\"},\"exp\":\"Explanation\"},\"ur\":{\"q\":\"سوال؟\",\"a\":\"A\",\"options\":{\"A\":\"جواب1\",\"B\":\"جواب2\",\"C\":\"جواب3\",\"D\":\"جواب4\"},\"exp\":\"وضاحت\"},\"hi\":{\"q\":\"Sawal?\",\"a\":\"A\",\"options\":{\"A\":\"Jawab1\",\"B\":\"Jawab2\",\"C\":\"Jawab3\",\"D\":\"Jawab4\"},\"exp\":\"Explanation\"}}]";
 
     try {
