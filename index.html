@@ -3,169 +3,92 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Islamic AI Content Factory 2026</title>
+    <title>Islamic Post Creator</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&family=Noto+Nastaliq+Urdu&display=swap" rel="stylesheet">
     <style>
-        :root { --gold: #FFD700; --dark: #111; --card: #1a1a1a; }
-        body { background: var(--dark); color: white; font-family: 'Poppins', sans-serif; text-align: center; padding: 10px; margin: 0; }
-        .batch-controls { background: #222; padding: 20px; border-radius: 0 0 20px 20px; margin-bottom: 20px; border-bottom: 2px solid var(--gold); position: sticky; top: 0; z-index: 100; }
-        input { padding: 12px; width: 85%; margin: 10px 0; border-radius: 8px; border: 1px solid #444; background: #333; color: white; font-size: 16px; }
-        button { padding: 12px 24px; background: var(--gold); border: none; cursor: pointer; border-radius: 8px; font-weight: bold; margin: 5px; color: black; transition: 0.3s; }
-        button:active { transform: scale(0.95); }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; padding: 15px; }
-        .reel-card { background: var(--card); border: 1px solid #333; padding: 20px; border-radius: 15px; text-align: left; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
-        .urdu-text { font-family: 'Noto Nastaliq Urdu', serif; direction: rtl; text-align: right; color: #00ffcc; line-height: 2.2; font-size: 1.2em; margin: 15px 0; }
-        .loading { color: var(--gold); display: none; font-weight: bold; margin-top: 10px; animation: blink 1.5s infinite; }
-        @keyframes blink { 50% { opacity: 0.5; } }
-        canvas { display: none; } /* Hidden generator canvas */
+        :root { --gold: #FFD700; --dark: #111; }
+        body { background: var(--dark); color: white; font-family: 'Poppins', sans-serif; text-align: center; padding: 20px; }
+        textarea { width: 90%; height: 150px; background: #222; color: #FFD700; border: 1px solid var(--gold); border-radius: 10px; padding: 15px; }
+        .controls { margin: 20px 0; }
+        button { padding: 15px 30px; background: var(--gold); border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        .preview-card { background: #1a1a1a; padding: 20px; border-radius: 15px; margin-top: 20px; text-align: left; border: 1px solid #333; }
+        .urdu { font-family: 'Noto Nastaliq Urdu'; direction: rtl; text-align: right; color: #00ffcc; font-size: 1.2em; }
+        canvas { display: none; }
     </style>
 </head>
 <body>
 
-<div class="batch-controls">
-    <h2>🤖 Islamic Content AI</h2>
-    <input type="password" id="apiKey" placeholder="Enter Gemini API Key">
-    <br>
-    <button onclick="generateBatch()">🚀 Generate 5 Posts</button>
-    <p class="loading" id="loader">AI is preparing your Deen content...</p>
-</div>
+    <h2>🕌 Manual Islamic Content Factory</h2>
+    <p>Ask Gemini on your phone for a quiz JSON, then paste it here:</p>
+    
+    <textarea id="manualInput" placeholder="Paste JSON here..."></textarea>
+    
+    <div class="controls">
+        <button onclick="processContent()">🎨 Create Visuals</button>
+    </div>
 
-<div id="contentGrid" class="grid"></div>
-
-<!-- Hidden Canvas for Image Generation -->
-<canvas id="genCanvas" width="1080" height="1350"></canvas>
+    <div id="output"></div>
+    <canvas id="canvas" width="1080" height="1350"></canvas>
 
 <script>
-let currentBatch = [];
+let currentData;
 
-async function generateBatch() {
-    const key = document.getElementById('apiKey').value.trim();
-    if(!key) return alert("Please paste your API Key first!");
-    
-    const loader = document.getElementById('loader');
-    const grid = document.getElementById('contentGrid');
-    
-    loader.style.display = "block";
-    grid.innerHTML = ""; 
-
-    // USE V1BETA FOR STABLE JSON RESPONSE IN 2026
-    const apiURL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash:generateContent?key=${key}`;
-
-    const prompt = `Generate 5 Islamic Quiz questions. Return ONLY a valid JSON array. 
-    Format: [{"en":{"q":"Question?","a":"A","options":{"A":"","B":"","C":"","D":""},"exp":""},
-    "ur":{"q":"سوال؟","a":"A","options":{"A":"","B":"","C":"","D":""},"exp":""},
-    "hi":{"q":"Sawal?","a":"A","options":{"A":"","B":"","C":"","D":""},"exp":""}}]`;
-
+function processContent() {
     try {
-        const response = await fetch(apiURL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                contents: [{ parts: [{ text: prompt }] }],
-                generationConfig: { response_mime_type: "application/json" }
-            })
-        });
-
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error.message || "Connection Failed");
-        }
-
-        const result = await response.json();
-        const rawText = result.candidates[0].content.parts[0].text;
-        currentBatch = JSON.parse(rawText);
+        const raw = document.getElementById('manualInput').value;
+        currentData = JSON.parse(raw.replace(/```json|```/g, ""));
+        const item = Array.isArray(currentData) ? currentData[0] : currentData;
         
-        displayBatch();
-        loader.style.display = "none";
+        document.getElementById('output').innerHTML = `
+            <div class="preview-card">
+                <h3>Ready for Export:</h3>
+                <p><b>EN:</b> ${item.en.q}</p>
+                <div class="urdu">${item.ur.q}</div>
+                <hr>
+                <button onclick="saveSlide('Q')">📥 Download Question Slide</button>
+                <button onclick="saveSlide('A')">📥 Download Answer Slide</button>
+                <button onclick="copyTags()">📝 Copy Caption</button>
+            </div>
+        `;
     } catch (e) {
-        loader.innerText = "❌ Error: " + e.message;
-        alert("System Error: " + e.message);
+        alert("Please paste valid JSON from Gemini.");
     }
 }
 
-function displayBatch() {
-    const grid = document.getElementById('contentGrid');
-    grid.innerHTML = currentBatch.map((item, i) => `
-        <div class="reel-card">
-            <h3 style="color:gold; margin-top:0;">Post #${i+1}</h3>
-            <p><b>EN:</b> ${item.en.q}</p>
-            <div class="urdu-text">${item.ur.q}</div>
-            <p style="font-size: 0.85em; color: #bbb;"><b>HI:</b> ${item.hi.q}</p>
-            <hr style="border: 0.5px solid #444;">
-            <button onclick="downloadImage(${i}, 'Q')">📸 Save Q Slide</button>
-            <button onclick="downloadImage(${i}, 'A')">📸 Save Ans Slide</button>
-            <button onclick="copyCaption(${i})" style="background:#444; color:white;">📝 Copy Caption</button>
-        </div>
-    `).join('');
-}
-
-function downloadImage(index, type) {
-    const canvas = document.getElementById('genCanvas');
+function saveSlide(type) {
+    const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
-    const item = currentBatch[index];
+    const item = Array.isArray(currentData) ? currentData[0] : currentData;
 
-    // Background
-    ctx.fillStyle = "#111111";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = "#111";
+    ctx.fillRect(0,0,1080,1350);
+    ctx.strokeStyle = "#FFD700"; ctx.lineWidth = 40; ctx.strokeRect(60,60,960,1230);
     
-    // Border
-    ctx.strokeStyle = "#FFD700";
-    ctx.lineWidth = 30;
-    ctx.strokeRect(50, 50, canvas.width-100, canvas.height-100);
-
-    ctx.textAlign = "center";
-    ctx.fillStyle = "white";
-
+    ctx.textAlign = "center"; ctx.fillStyle = "white";
+    
     if(type === 'Q') {
-        ctx.font = "bold 50px Poppins";
-        wrapText(ctx, item.en.q, 540, 300, 900, 70);
-        
-        ctx.font = "40px Poppins";
-        ctx.fillStyle = "#FFD700";
-        ctx.fillText("A) " + item.en.options.A, 540, 650);
-        ctx.fillText("B) " + item.en.options.B, 540, 750);
-        ctx.fillText("C) " + item.en.options.C, 540, 850);
-        ctx.fillText("D) " + item.en.options.D, 540, 950);
+        ctx.font = "bold 60px Poppins";
+        ctx.fillText(item.en.q, 540, 400);
+        ctx.font = "50px Poppins";
+        ctx.fillText("A) "+item.en.options.A, 540, 700);
+        ctx.fillText("B) "+item.en.options.B, 540, 800);
     } else {
-        ctx.fillStyle = "#FFD700";
-        ctx.font = "bold 70px Poppins";
+        ctx.fillStyle = "#FFD700"; ctx.font = "bold 80px Poppins";
         ctx.fillText("CORRECT ANSWER", 540, 400);
-        
-        ctx.fillStyle = "white";
-        ctx.font = "60px Poppins";
-        ctx.fillText(item.en.a + ") " + item.en.options[item.en.a], 540, 550);
-        
-        ctx.font = "35px Poppins";
-        ctx.fillStyle = "#bbb";
-        wrapText(ctx, item.en.exp, 540, 800, 850, 50);
+        ctx.fillStyle = "white"; ctx.fillText(item.en.a + ") " + item.en.options[item.en.a], 540, 600);
     }
 
     const link = document.createElement('a');
-    link.download = `Islamic_Post_${index}_${type}.png`;
+    link.download = `Islamic_Post_${type}.png`;
     link.href = canvas.toDataURL();
     link.click();
 }
 
-function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
-    let words = text.split(' ');
-    let line = '';
-    for(let n = 0; n < words.length; n++) {
-        let testLine = line + words[n] + ' ';
-        if (ctx.measureText(testLine).width > maxWidth && n > 0) {
-            ctx.fillText(line, x, y);
-            line = words[n] + ' ';
-            y += lineHeight;
-        } else { line = testLine; }
-    }
-    ctx.fillText(line, x, y);
-}
-
-function copyCaption(i) {
-    const item = currentBatch[i];
-    const tags = "#islamicquiz #deen #muslim #islamicreminders #quran #reelsindia #dailydeen";
-    const text = `❓ Quiz: ${item.en.q}\n\n✅ Answer: ${item.en.a}) ${item.en.options[item.en.a]}\n\n💡 Info: ${item.en.exp}\n\n${tags}`;
+function copyTags() {
+    const item = Array.isArray(currentData) ? currentData[0] : currentData;
+    const text = `${item.en.q}\n\nAnswer: ${item.en.a}\n\n#islamicquiz #deen #reelsindia`;
     navigator.clipboard.writeText(text);
-    alert("Caption & Hashtags Copied!");
+    alert("Caption Copied!");
 }
 </script>
 </body>
