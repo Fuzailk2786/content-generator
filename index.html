@@ -3,92 +3,160 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Islamic Post Creator</title>
+    <title>Islamic Content Factory Pro</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&family=Noto+Nastaliq+Urdu&display=swap" rel="stylesheet">
     <style>
         :root { --gold: #FFD700; --dark: #111; }
-        body { background: var(--dark); color: white; font-family: 'Poppins', sans-serif; text-align: center; padding: 20px; }
-        textarea { width: 90%; height: 150px; background: #222; color: #FFD700; border: 1px solid var(--gold); border-radius: 10px; padding: 15px; }
-        .controls { margin: 20px 0; }
-        button { padding: 15px 30px; background: var(--gold); border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
-        .preview-card { background: #1a1a1a; padding: 20px; border-radius: 15px; margin-top: 20px; text-align: left; border: 1px solid #333; }
-        .urdu { font-family: 'Noto Nastaliq Urdu'; direction: rtl; text-align: right; color: #00ffcc; font-size: 1.2em; }
-        canvas { display: none; }
+        body { background: var(--dark); color: white; font-family: 'Poppins', sans-serif; text-align: center; margin: 0; padding: 10px; }
+        .controls { background: #222; padding: 20px; border-radius: 0 0 20px 20px; border-bottom: 2px solid var(--gold); sticky: top; }
+        textarea { width: 90%; height: 100px; background: #333; color: var(--gold); border: 1px solid #444; border-radius: 10px; padding: 10px; margin: 10px 0; }
+        button { padding: 12px 20px; background: var(--gold); border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin: 5px; }
+        .preview-area { display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; padding: 20px; }
+        .slide-card { background: #1a1a1a; padding: 15px; border-radius: 12px; border: 1px solid #333; width: 300px; text-align: left; }
+        canvas { display: none; border-radius: 10px; border: 2px solid #444; }
+        #video-container { display: none; margin-top: 20px; }
+        video-canvas-display { width: 300px; height: 375px; background: black; border: 2px solid gold; margin: auto; display: block; }
     </style>
 </head>
 <body>
 
-    <h2>🕌 Manual Islamic Content Factory</h2>
-    <p>Ask Gemini on your phone for a quiz JSON, then paste it here:</p>
-    
-    <textarea id="manualInput" placeholder="Paste JSON here..."></textarea>
-    
-    <div class="controls">
-        <button onclick="processContent()">🎨 Create Visuals</button>
-    </div>
+<div class="controls">
+    <h2>🕌 Islamic Reel & Carousel Factory</h2>
+    <textarea id="jsonInput" placeholder="Paste JSON from Gemini here..."></textarea><br>
+    <button onclick="processData()">🎨 Create Carousel</button>
+    <button onclick="generateVideoPreview()" style="background:#00ffcc; color:black;">🎬 Create Video Reel</button>
+</div>
 
-    <div id="output"></div>
-    <canvas id="canvas" width="1080" height="1350"></canvas>
+<div id="previewArea" class="preview-area"></div>
+
+<!-- The Engine Canvas -->
+<canvas id="genCanvas" width="1080" height="1350"></canvas>
 
 <script>
 let currentData;
+const bgImage = "https://images.unsplash.com/photo-1542810634-71277d95dcbb?q=80&w=1080"; // Islamic Background
 
-function processContent() {
+function processData() {
     try {
-        const raw = document.getElementById('manualInput').value;
-        currentData = JSON.parse(raw.replace(/```json|```/g, ""));
-        const item = Array.isArray(currentData) ? currentData[0] : currentData;
-        
-        document.getElementById('output').innerHTML = `
-            <div class="preview-card">
-                <h3>Ready for Export:</h3>
-                <p><b>EN:</b> ${item.en.q}</p>
-                <div class="urdu">${item.ur.q}</div>
-                <hr>
-                <button onclick="saveSlide('Q')">📥 Download Question Slide</button>
-                <button onclick="saveSlide('A')">📥 Download Answer Slide</button>
-                <button onclick="copyTags()">📝 Copy Caption</button>
-            </div>
-        `;
+        let raw = document.getElementById('jsonInput').value;
+        currentData = JSON.parse(raw.replace(/
+```json|```/g, ""));
+        renderCarouselPreviews();
     } catch (e) {
-        alert("Please paste valid JSON from Gemini.");
+        alert("Invalid JSON! Please paste the exact code Gemini provided.");
     }
 }
 
-function saveSlide(type) {
-    const canvas = document.getElementById('canvas');
-    const ctx = canvas.getContext('2d');
-    const item = Array.isArray(currentData) ? currentData[0] : currentData;
+function renderCarouselPreviews() {
+    const area = document.getElementById('previewArea');
+    area.innerHTML = `
+        <div class="slide-card"><h4>Slide 1: Question</h4><button onclick="downloadSlide(1)">📥 Download</button></div>
+        <div class="slide-card"><h4>Slide 2: Options</h4><button onclick="downloadSlide(2)">📥 Download</button></div>
+        <div class="slide-card"><h4>Slide 3: Correct Answer</h4><button onclick="downloadSlide(3)">📥 Download</button></div>
+        <div class="slide-card"><h4>Slide 4: Explanation</h4><button onclick="downloadSlide(4)">📥 Download</button></div>
+    `;
+}
 
-    ctx.fillStyle = "#111";
-    ctx.fillRect(0,0,1080,1350);
-    ctx.strokeStyle = "#FFD700"; ctx.lineWidth = 40; ctx.strokeRect(60,60,960,1230);
+function drawTemplate(ctx) {
+    // 1. Draw Islamic Dark Background
+    ctx.fillStyle = "#0c0c0c";
+    ctx.fillRect(0, 0, 1080, 1350);
     
-    ctx.textAlign = "center"; ctx.fillStyle = "white";
+    // 2. Draw Decorative Border
+    ctx.strokeStyle = "rgba(255, 215, 0, 0.4)";
+    ctx.lineWidth = 40;
+    ctx.strokeRect(60, 60, 960, 1230);
     
-    if(type === 'Q') {
-        ctx.font = "bold 60px Poppins";
-        ctx.fillText(item.en.q, 540, 400);
-        ctx.font = "50px Poppins";
-        ctx.fillText("A) "+item.en.options.A, 540, 700);
-        ctx.fillText("B) "+item.en.options.B, 540, 800);
-    } else {
+    // 3. Subtle Pattern/Overlay
+    ctx.fillStyle = "rgba(255, 215, 0, 0.05)";
+    ctx.font = "300px Poppins";
+    ctx.fillText("☪", 540, 750);
+}
+
+function downloadSlide(num) {
+    const canvas = document.getElementById('genCanvas');
+    const ctx = canvas.getContext('2d');
+    drawTemplate(ctx);
+    
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+
+    if (num === 1) { // Slide 1: Questions in 3 Languages
+        ctx.fillStyle = "#FFD700"; ctx.font = "bold 55px Poppins";
+        wrapText(ctx, currentData.en.q, 540, 300, 850, 70);
+        
+        ctx.fillStyle = "#00ffcc"; ctx.font = "45px 'Noto Nastaliq Urdu'";
+        ctx.direction = "rtl";
+        wrapText(ctx, currentData.ur.q, 540, 650, 850, 90);
+        
+        ctx.fillStyle = "#ffffff"; ctx.font = "40px Poppins"; ctx.direction = "ltr";
+        wrapText(ctx, currentData.hi.q, 540, 1000, 850, 60);
+    } 
+    else if (num === 2) { // Slide 2: Options
+        ctx.fillStyle = "#FFD700"; ctx.font = "bold 60px Poppins";
+        ctx.fillText("CHOOSE THE CORRECT OPTION", 540, 200);
+        
+        let opts = currentData.en.options;
+        ctx.font = "50px Poppins"; ctx.fillStyle = "white";
+        ctx.fillText("A) " + opts.A, 540, 450);
+        ctx.fillText("B) " + opts.B, 540, 600);
+        ctx.fillText("C) " + opts.C, 540, 750);
+        ctx.fillText("D) " + opts.D, 540, 900);
+    }
+    else if (num === 3) { // Slide 3: Correct Answer
         ctx.fillStyle = "#FFD700"; ctx.font = "bold 80px Poppins";
         ctx.fillText("CORRECT ANSWER", 540, 400);
-        ctx.fillStyle = "white"; ctx.fillText(item.en.a + ") " + item.en.options[item.en.a], 540, 600);
+        ctx.fillStyle = "white"; ctx.font = "bold 70px Poppins";
+        let correctLetter = currentData.en.a;
+        ctx.fillText(correctLetter + ") " + currentData.en.options[correctLetter], 540, 600);
+        
+        ctx.font = "40px 'Noto Nastaliq Urdu'"; ctx.fillStyle = "#00ffcc";
+        ctx.fillText(currentData.ur.options[correctLetter], 540, 800);
+    }
+    else if (num === 4) { // Slide 4: Explanation
+        ctx.fillStyle = "#FFD700"; ctx.font = "bold 60px Poppins";
+        ctx.fillText("EXPLANATION", 540, 250);
+        ctx.fillStyle = "#ffffff"; ctx.font = "35px Poppins";
+        wrapText(ctx, currentData.en.exp, 540, 450, 850, 55);
+        ctx.fillStyle = "#00ffcc"; ctx.font = "35px 'Noto Nastaliq Urdu'";
+        wrapText(ctx, currentData.ur.exp, 540, 850, 850, 70);
     }
 
     const link = document.createElement('a');
-    link.download = `Islamic_Post_${type}.png`;
+    link.download = `Slide_${num}.png`;
     link.href = canvas.toDataURL();
     link.click();
 }
 
-function copyTags() {
-    const item = Array.isArray(currentData) ? currentData[0] : currentData;
-    const text = `${item.en.q}\n\nAnswer: ${item.en.a}\n\n#islamicquiz #deen #reelsindia`;
-    navigator.clipboard.writeText(text);
-    alert("Caption Copied!");
+function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
+    let words = text.split(' ');
+    let line = '';
+    for (let n = 0; n < words.length; n++) {
+        let testLine = line + words[n] + ' ';
+        if (ctx.measureText(testLine).width > maxWidth && n > 0) {
+            ctx.fillText(line, x, y);
+            line = words[n] + ' ';
+            y += lineHeight;
+        } else { line = testLine; }
+    }
+    ctx.fillText(line, x, y);
+}
+
+// 🎬 VIDEO PREVIEW LOGIC
+function generateVideoPreview() {
+    alert("Video Mode: Screens will cycle every 3 seconds. Screen-record this on your mobile for the Reel!");
+    let i = 1;
+    const interval = setInterval(() => {
+        downloadSlide(i); // This draws it to the canvas
+        document.getElementById('genCanvas').style.display = "block";
+        document.getElementById('genCanvas').style.width = "300px";
+        document.getElementById('genCanvas').style.height = "375px";
+        i++;
+        if (i > 4) {
+            clearInterval(interval);
+            alert("Video cycle finished. You can now download slides manually for the carousel.");
+        }
+    }, 3000);
 }
 </script>
 </body>
