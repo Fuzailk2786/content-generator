@@ -3,20 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Islamic Content AI Pro</title>
+    <title>Islamic AI Content Factory 2026</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&family=Noto+Nastaliq+Urdu&display=swap" rel="stylesheet">
     <style>
         :root { --gold: #FFD700; --dark: #0a0a0a; --accent: #00ffcc; }
         body { background: var(--dark); color: white; font-family: 'Poppins', sans-serif; text-align: center; margin: 0; padding: 10px; }
-        .controls { background: #1a1a1a; padding: 20px; border-radius: 0 0 20px 20px; border-bottom: 3px solid var(--gold); position: sticky; top: 0; z-index: 1000; box-shadow: 0 4px 20px rgba(0,0,0,0.8); }
-        textarea { width: 90%; height: 80px; background: #222; color: var(--gold); border: 1px solid #444; border-radius: 10px; padding: 10px; margin: 10px 0; font-size: 14px; }
-        button { padding: 12px 24px; background: var(--gold); border: none; cursor: pointer; border-radius: 8px; font-weight: bold; margin: 5px; color: black; transition: 0.3s; }
-        button:hover { background: #fff; transform: translateY(-2px); }
+        .controls { background: #1a1a1a; padding: 20px; border-radius: 0 0 20px 20px; border-bottom: 3px solid var(--gold); position: sticky; top: 0; z-index: 1000; }
+        textarea { width: 90%; height: 80px; background: #222; color: var(--gold); border: 1px solid #444; border-radius: 10px; padding: 10px; margin: 10px 0; }
+        button { padding: 12px 24px; background: var(--gold); border: none; cursor: pointer; border-radius: 8px; font-weight: bold; margin: 5px; color: black; }
         .btn-reel { background: var(--accent); }
-        #status { color: var(--accent); margin: 10px; font-weight: bold; height: 20px; }
+        #status { color: var(--accent); margin: 10px; font-weight: bold; }
         .preview-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; padding: 20px; }
-        .card { background: #1a1a1a; padding: 15px; border-radius: 15px; border: 1px solid #333; transition: 0.3s; }
-        canvas { display: none; margin: 20px auto; border-radius: 15px; border: 3px solid var(--gold); max-width: 95%; box-shadow: 0 0 30px rgba(255, 215, 0, 0.2); }
+        .card { background: #1a1a1a; padding: 15px; border-radius: 15px; border: 1px solid #333; }
+        canvas { display: none; margin: 20px auto; border-radius: 15px; border: 3px solid var(--gold); max-width: 95%; }
     </style>
 </head>
 <body>
@@ -25,7 +24,7 @@
     <h2>🕌 Islamic AI Content Factory</h2>
     <textarea id="jsonInput" placeholder="Paste JSON here..."></textarea><br>
     <button onclick="processData()">📸 Create Carousel</button>
-    <button class="btn-reel" onclick="runVideoSequence()">🎬 Generate Reel Sequence</button>
+    <button class="btn-reel" onclick="runVideoSequence()">🎬 Generate & Download Reel</button>
     <div id="status"></div>
 </div>
 
@@ -35,9 +34,8 @@
 <script>
 let currentData = null;
 const bgImages = [
-    "https://images.unsplash.com/photo-1542810634-71277d95dcbb?q=80&w=1080", // Mosque Interior
-    "https://images.unsplash.com/photo-1564769625905-50e93615e769?q=80&w=1080", // Grand Mosque
-    "https://images.unsplash.com/photo-1590076215667-875d4ef2d97e?q=80&w=1080"  // Minaret at night
+    "https://images.unsplash.com/photo-1542810634-71277d95dcbb?q=80&w=1080", 
+    "https://images.unsplash.com/photo-1564769625905-50e93615e769?q=80&w=1080"
 ];
 
 function processData() {
@@ -46,10 +44,10 @@ function processData() {
         let raw = document.getElementById('jsonInput').value.trim();
         raw = raw.replace(/```json|```/g, "").trim();
         currentData = JSON.parse(raw);
-        status.innerText = "Content Ready! ✅";
+        status.innerText = "JSON Verified ✅";
         renderCarouselUI();
     } catch (e) {
-        status.innerText = "❌ JSON Error! Check paste.";
+        status.innerText = "❌ JSON Error!";
     }
 }
 
@@ -63,137 +61,89 @@ function renderCarouselUI() {
     `;
 }
 
-async function drawBase(ctx, slideType = "carousel") {
+async function drawBase(ctx) {
     const img = new Image();
     img.crossOrigin = "anonymous";
-    // Carousel uses a different background than the Reel for variety
-    img.src = slideType === "carousel" ? bgImages[0] : bgImages[1];
-    
+    img.src = bgImages[0];
     return new Promise(resolve => {
         img.onload = () => {
-            // Draw Image
             ctx.drawImage(img, 0, 0, 1080, 1920);
-            // Add Dark Overlay for readability
-            ctx.fillStyle = "rgba(0, 0, 0, 0.75)";
+            ctx.fillStyle = "rgba(0, 0, 0, 0.8)";
             ctx.fillRect(0, 0, 1080, 1920);
-            // Gold Border
-            ctx.strokeStyle = "rgba(255, 215, 0, 0.5)";
-            ctx.lineWidth = 30;
-            ctx.strokeRect(50, 50, 980, 1820);
+            ctx.strokeStyle = "gold";
+            ctx.lineWidth = 20;
+            ctx.strokeRect(40, 40, 1000, 1840);
             resolve();
         };
     });
 }
 
-async function drawAndDownload(num) {
+async function drawAndDownload(num, isReel = false) {
     const canvas = document.getElementById('mainCanvas');
     const ctx = canvas.getContext('2d');
-    await drawBase(ctx, "carousel");
+    await drawBase(ctx);
     
     ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
+    const safeWidth = 850;
 
-    if (num === 1) { // 3 Languages Question
-        ctx.fillStyle = "#FFD700"; ctx.font = "bold 65px Poppins";
-        wrapText(ctx, currentData.en.q, 540, 450, 900, 80);
-        ctx.fillStyle = "#00ffcc"; ctx.font = "60px 'Noto Nastaliq Urdu'";
-        wrapText(ctx, currentData.ur.q, 540, 900, 900, 110);
-        ctx.fillStyle = "white"; ctx.font = "50px Poppins";
-        wrapText(ctx, currentData.hi.q, 540, 1400, 900, 70);
+    if (num === 1) { 
+        drawText(ctx, currentData.en.q, 540, 400, safeWidth, 60, "bold 60px Poppins", "#FFD700");
+        drawText(ctx, currentData.ur.q, 540, 850, safeWidth, 90, "50px 'Noto Nastaliq Urdu'", "#00ffcc");
+        drawText(ctx, currentData.hi.q, 540, 1350, safeWidth, 60, "45px Poppins", "white");
     } 
-    else if (num === 2) { // Options
-        ctx.fillStyle = "#FFD700"; ctx.font = "bold 70px Poppins";
-        ctx.fillText("CHOOSE THE OPTION", 540, 350);
-        ctx.font = "60px Poppins"; ctx.fillStyle = "white";
+    else if (num === 2) {
+        drawText(ctx, "CHOOSE THE OPTION", 540, 300, safeWidth, 70, "bold 65px Poppins", "#FFD700");
         const opts = currentData.en.options;
-        ctx.fillText("A) " + opts.A, 540, 700);
-        ctx.fillText("B) " + opts.B, 540, 900);
-        ctx.fillText("C) " + opts.C, 540, 1100);
-        ctx.fillText("D) " + opts.D, 540, 1300);
+        drawText(ctx, `A) ${opts.A}`, 540, 600, safeWidth, 60, "50px Poppins", "white");
+        drawText(ctx, `B) ${opts.B}`, 540, 750, safeWidth, 60, "50px Poppins", "white");
+        drawText(ctx, `C) ${opts.C}`, 540, 900, safeWidth, 60, "50px Poppins", "white");
+        drawText(ctx, `D) ${opts.D}`, 540, 1050, safeWidth, 60, "50px Poppins", "white");
     }
-    else if (num === 3) { // Reveal
-        ctx.fillStyle = "#FFD700"; ctx.font = "bold 90px Poppins";
-        ctx.fillText("CORRECT ANSWER", 540, 600);
-        ctx.fillStyle = "white"; ctx.font = "bold 85px Poppins";
+    else if (num === 3) {
+        drawText(ctx, "CORRECT ANSWER", 540, 600, safeWidth, 80, "bold 80px Poppins", "#FFD700");
         let a = currentData.en.a;
-        ctx.fillText(a + ") " + currentData.en.options[a], 540, 850);
+        drawText(ctx, `${a}) ${currentData.en.options[a]}`, 540, 800, safeWidth, 80, "bold 70px Poppins", "white");
     }
-    else if (num === 4) { // Multi-language Explanation
-        ctx.fillStyle = "#FFD700"; ctx.font = "bold 60px Poppins";
-        ctx.fillText("EXPLANATION", 540, 300);
-        ctx.fillStyle = "white"; ctx.font = "40px Poppins";
-        wrapText(ctx, currentData.en.exp, 540, 550, 900, 60);
-        ctx.fillStyle = "#00ffcc"; ctx.font = "45px 'Noto Nastaliq Urdu'";
-        wrapText(ctx, currentData.ur.exp, 540, 1200, 900, 90);
+    else if (num === 4) {
+        drawText(ctx, "EXPLANATION", 540, 300, safeWidth, 70, "bold 60px Poppins", "#FFD700");
+        drawText(ctx, currentData.en.exp, 540, 500, safeWidth, 55, "40px Poppins", "white");
+        drawText(ctx, currentData.ur.exp, 540, 1200, safeWidth, 85, "40px 'Noto Nastaliq Urdu'", "#00ffcc");
     }
 
     const link = document.createElement('a');
-    link.download = `Islamic_Post_Slide_${num}.png`;
+    link.download = `Islamic_${isReel ? 'Reel' : 'Slide'}_${num}.png`;
     link.href = canvas.toDataURL();
     link.click();
 }
 
-// 🎬 UNIQUE REEL SEQUENCE ENGINE
 async function runVideoSequence() {
     if(!currentData) return alert("Process JSON first!");
-    const canvas = document.getElementById('mainCanvas');
-    const ctx = canvas.getContext('2d');
-    canvas.style.display = "block";
     const status = document.getElementById('status');
-
-    // Reel Flow: Q (3s) -> Options Appear (4s) -> Answer Reveal (3s)
-    let steps = [
-        { type: "Q", duration: 3000 },
-        { type: "OPT", duration: 4000 },
-        { type: "ANS", duration: 3000 }
-    ];
-
-    for(let step of steps) {
-        status.innerText = `Reel Phase: ${step.type}...`;
-        await drawBase(ctx, "reel");
-        ctx.textAlign = "center";
-
-        if(step.type === "Q") {
-            ctx.fillStyle = "#FFD700"; ctx.font = "bold 65px Poppins";
-            wrapText(ctx, currentData.en.q, 540, 500, 900, 80);
-            ctx.fillStyle = "#00ffcc"; ctx.font = "60px 'Noto Nastaliq Urdu'";
-            wrapText(ctx, currentData.ur.q, 540, 900, 900, 110);
-            ctx.fillStyle = "white"; ctx.font = "50px Poppins";
-            wrapText(ctx, currentData.hi.q, 540, 1400, 900, 70);
-        } else if(step.type === "OPT") {
-            ctx.fillStyle = "#FFD700"; ctx.font = "bold 70px Poppins";
-            ctx.fillText("WHICH ONE IS CORRECT?", 540, 400);
-            ctx.font = "60px Poppins"; ctx.fillStyle = "white";
-            let opts = currentData.en.options;
-            ctx.fillText("A) " + opts.A, 540, 750);
-            ctx.fillText("B) " + opts.B, 540, 950);
-            ctx.fillText("C) " + opts.C, 540, 1150);
-            ctx.fillText("D) " + opts.D, 540, 1350);
-        } else if(step.type === "ANS") {
-            ctx.fillStyle = "#FFD700"; ctx.font = "bold 90px Poppins";
-            ctx.fillText("THE ANSWER IS:", 540, 600);
-            ctx.fillStyle = "white"; ctx.font = "bold 100px Poppins";
-            ctx.fillText(currentData.en.a + ") " + currentData.en.options[currentData.en.a], 540, 850);
-        }
-        
-        await new Promise(r => setTimeout(r, step.duration));
+    status.innerText = "Generating Reel Slides...";
+    for(let i=1; i<=3; i++) {
+        await drawAndDownload(i, true);
+        await new Promise(r => setTimeout(r, 500));
     }
-    status.innerText = "Reel Done! ✅ Screen Record now.";
+    status.innerText = "Reel Slides Downloaded! ✅";
 }
 
-function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
-    if(!text) return;
+function drawText(ctx, text, x, y, maxWidth, lineHeight, font, color) {
+    ctx.font = font;
+    ctx.fillStyle = color;
     let words = text.split(' ');
     let line = '';
+    let currentY = y;
+
     for (let n = 0; n < words.length; n++) {
         let testLine = line + words[n] + ' ';
-        if (ctx.measureText(testLine).width > maxWidth && n > 0) {
-            ctx.fillText(line, x, y);
+        let metrics = ctx.measureText(testLine);
+        if (metrics.width > maxWidth && n > 0) {
+            ctx.fillText(line, x, currentY);
             line = words[n] + ' ';
-            y += lineHeight;
+            currentY += lineHeight;
         } else { line = testLine; }
     }
-    ctx.fillText(line, x, y);
+    ctx.fillText(line, x, currentY);
 }
 </script>
 </body>
