@@ -29,105 +29,160 @@
 <script>
 let currentData = null;
 
+const bgImages = [
+    "https://images.unsplash.com/photo-1542810634-71277d95dcbb?w=1080",
+    "https://images.unsplash.com/photo-1564769625905-50e93615e769?w=1080",
+    "https://images.unsplash.com/photo-1590076215667-875d4ef2d97e?w=1080"
+];
+
 function processData() {
     try {
         let raw = document.getElementById('jsonInput').value.trim();
         raw = raw.replace(/```json|```/g, "").trim();
         currentData = JSON.parse(raw);
+
+        document.getElementById('status').innerText = "Alignment Fixed! Choose a slide below. ✅";
         renderButtons();
         drawSlide(1);
     } catch (e) {
-        alert("JSON Error! Check your formatting.");
+        alert("JSON Error! Please ensure valid structure.");
     }
 }
 
 function renderButtons() {
     const area = document.getElementById('buttonArea');
     area.innerHTML = `
-        <button onclick="drawSlide(1)">Slide 1</button>
-        <button onclick="drawSlide(2)">Slide 2</button>
-        <button onclick="drawSlide(3)">Slide 3</button>
-        <button onclick="drawSlide(4)">Slide 4</button>
+        <button onclick="drawSlide(1)">Slide 1: Q</button>
+        <button onclick="drawSlide(2)">Slide 2: Options</button>
+        <button onclick="drawSlide(3)">Slide 3: Answer</button>
+        <button onclick="drawSlide(4)">Slide 4: Explanation</button>
     `;
 }
 
 async function drawSlide(num) {
     const canvas = document.getElementById('mainCanvas');
     const ctx = canvas.getContext('2d');
-    
-    // Reset Canvas
-    ctx.fillStyle = "#0a0a0a";
+
+    // Clear
+    ctx.fillStyle = "black";
     ctx.fillRect(0,0,1080,1920);
-    
-    // Draw Frame
-    ctx.strokeStyle = "gold"; ctx.lineWidth = 30; ctx.strokeRect(60,60,960,1800);
+
+    // Safe background loading (FIXED)
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.src = bgImages[num % bgImages.length];
+
+    await new Promise(resolve => {
+        img.onload = resolve;
+        img.onerror = resolve; // fallback if image fails
+        setTimeout(resolve, 1500); // safety timeout
+    });
+
+    try {
+        ctx.globalAlpha = 0.35;
+        ctx.drawImage(img, 0, 0, 1080, 1920);
+        ctx.globalAlpha = 1.0;
+    } catch {}
+
+    // Frame
+    ctx.strokeStyle = "gold";
+    ctx.lineWidth = 30;
+    ctx.strokeRect(60,60,960,1800);
+
     ctx.textAlign = "center";
 
     if (num === 1) {
-        drawBoxText(ctx, "ENGLISH QUESTION", currentData.en.q, 450, "white", "bold 48px Poppins");
-        drawBoxText(ctx, "اردو سوال", currentData.ur.q, 950, "#00ffcc", "60px 'Noto Nastaliq Urdu'");
-        drawBoxText(ctx, "HINGLISH", currentData.hi.q, 1450, "#ddd", "42px Poppins");
+        drawSection(ctx, "ENGLISH", currentData.en.q, 400, "white", "bold 50px Poppins");
+        drawSection(ctx, "اردو", currentData.ur.q, 900, "#00ffcc", "60px 'Noto Nastaliq Urdu'");
+        drawSection(ctx, "HINGLISH", currentData.hi.q, 1400, "#ddd", "45px Poppins");
     } 
     else if (num === 2) {
-        drawBoxText(ctx, "CHOOSE THE OPTION", "", 250, "gold", "bold 60px Poppins");
+        drawSection(ctx, "CHOOSE THE CORRECT OPTION", "", 250, "gold", "bold 60px Poppins");
+
         const opts = currentData.en.options;
         const urOpts = currentData.ur.options;
-        ["A", "B", "C", "D"].forEach((l, i) => {
-            let y = 550 + (i * 300);
-            ctx.fillStyle = "white"; ctx.font = "bold 52px Poppins";
-            ctx.fillText(`${l}) ${opts[l]}`, 540, y);
-            ctx.fillStyle = "#00ffcc"; ctx.font = "34px 'Noto Nastaliq Urdu'";
-            ctx.fillText(urOpts[l], 540, y + 80);
+
+        ["A","B","C","D"].forEach((l, i) => {
+            let y = 500 + (i * 300);
+
+            drawWrappedText(ctx, `${l}) ${opts[l]}`, 540, y, 800, "bold 50px Poppins", "white");
+            drawWrappedText(ctx, urOpts[l], 540, y + 70, 800, "40px 'Noto Nastaliq Urdu'", "#00ffcc");
+            drawWrappedText(ctx, currentData.hi.options[l], 540, y + 130, 800, "35px Poppins", "#aaa");
         });
     }
     else if (num === 3) {
         const a = currentData.en.a;
-        drawBoxText(ctx, "CORRECT ANSWER", 600, "gold", "bold 80px Poppins");
-        drawBoxText(ctx, "", `${a}) ${currentData.en.options[a]}`, 800, "white", "bold 70px Poppins");
-        drawBoxText(ctx, "", currentData.ur.options[a], 1000, "#00ffcc", "65px 'Noto Nastaliq Urdu'");
+
+        drawSection(ctx, "CORRECT ANSWER", "", 400, "gold", "bold 80px Poppins");
+
+        drawWrappedText(ctx, `${a}) ${currentData.en.options[a]}`, 540, 650, 800, "bold 65px Poppins", "white");
+        drawWrappedText(ctx, currentData.ur.options[a], 540, 1000, 800, "60px 'Noto Nastaliq Urdu'", "#00ffcc");
+        drawWrappedText(ctx, currentData.hi.options[a], 540, 1400, 800, "50px Poppins", "#ddd");
     }
     else if (num === 4) {
-        drawBoxText(ctx, "EXPLANATION", 300, "gold", "bold 60px Poppins");
-        drawBoxText(ctx, "EN", currentData.en.exp, 550, "white", "36px Poppins");
-        drawBoxText(ctx, "UR", currentData.ur.exp, 1050, "#00ffcc", "42px 'Noto Nastaliq Urdu'");
+        drawSection(ctx, "EXPLANATION", "", 250, "gold", "bold 60px Poppins");
+
+        drawWrappedText(ctx, currentData.en.exp, 540, 450, 850, "40px Poppins", "white");
+        drawWrappedText(ctx, currentData.ur.exp, 540, 950, 850, "45px 'Noto Nastaliq Urdu'", "#00ffcc");
+        drawWrappedText(ctx, currentData.hi.exp, 540, 1450, 850, "40px Poppins", "#ddd");
     }
 }
 
-function drawBoxText(ctx, label, text, y, color, font) {
-    if(label) {
-        ctx.fillStyle = "gold"; ctx.font = "bold 28px Poppins";
-        ctx.fillText(label, 540, y - 80);
+function drawSection(ctx, label, text, y, color, font) {
+    if(label){
+        ctx.fillStyle = "rgba(255,215,0,0.8)";
+        ctx.font = "bold 28px Poppins";
+        ctx.fillText(label, 540, y - 70);
     }
-    
-    ctx.fillStyle = color; ctx.font = font;
+    drawWrappedText(ctx, text, 540, y, 850, font, color);
+}
+
+// 🔥 FIXED TEXT WRAP FUNCTION
+function drawWrappedText(ctx, text, x, y, maxWidth, font, color) {
     if(!text) return;
 
-    let maxWidth = 800; // Restricted width to prevent overflow
-    let words = text.split(' ');
+    ctx.fillStyle = color;
+    ctx.font = font;
+
+    const words = text.split(' ');
     let line = '';
-    let startY = y;
-    let lineHeight = parseInt(font) * 1.4;
-    
-    for (let n = 0; n < words.length; n++) {
-        let testLine = line + words[n] + ' ';
-        if (ctx.measureText(testLine).width > maxWidth && n > 0) {
-            ctx.fillText(line, 540, startY);
-            line = words[n] + ' ';
-            startY += lineHeight;
-        } else { line = testLine; }
+    let lineHeight = getLineHeight(font);
+
+    for(let i = 0; i < words.length; i++){
+        const testLine = line + words[i] + ' ';
+        if(ctx.measureText(testLine).width > maxWidth && i > 0){
+            ctx.fillText(line, x, y);
+            line = words[i] + ' ';
+            y += lineHeight;
+        } else {
+            line = testLine;
+        }
     }
-    ctx.fillText(line, 540, startY);
+    ctx.fillText(line, x, y);
+}
+
+// 🔥 SAFE FONT HEIGHT FIX
+function getLineHeight(font) {
+    const size = font.match(/\d+/);
+    return size ? parseInt(size[0]) * 1.4 : 50;
 }
 
 async function downloadAll() {
-    for(let i=1; i<=4; i++) {
+    for(let i=1;i<=4;i++){
         await drawSlide(i);
         const link = document.createElement('a');
         link.download = `Slide_${i}.jpg`;
         link.href = document.getElementById('mainCanvas').toDataURL("image/jpeg", 0.9);
         link.click();
-        await new Promise(r => setTimeout(r, 1000));
+        await new Promise(r=>setTimeout(r,500));
     }
+}
+
+function copyCaption() {
+    const d = currentData.en;
+    const text = `❓ ${d.q}\n\n✅ ${d.a}) ${d.options[d.a]}\n\n💡 ${d.exp}\n\n#islamicquiz #deen #knowledge`;
+    navigator.clipboard.writeText(text);
+    alert("Caption Copied!");
 }
 </script>
 </body>
