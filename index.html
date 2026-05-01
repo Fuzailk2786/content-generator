@@ -3,17 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Islamic AI Content Factory Pro</title>
+    <title>Islamic Content Factory - Final Fixed</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&family=Noto+Nastaliq+Urdu&display=swap" rel="stylesheet">
     <style>
-        :root { --gold: #FFD700; --dark: #0a0a0a; --accent: #00ffcc; }
+        :root { --gold: #FFD700; --dark: #050505; }
         body { background: var(--dark); color: white; font-family: 'Poppins', sans-serif; text-align: center; margin: 0; padding: 10px; }
-        .controls { background: #1a1a1a; padding: 20px; border-radius: 0 0 20px 20px; border-bottom: 3px solid var(--gold); position: sticky; top: 0; z-index: 1000; }
-        textarea { width: 90%; height: 80px; background: #222; color: var(--gold); border: 1px solid #444; border-radius: 10px; padding: 10px; margin: 10px 0; }
-        button { padding: 12px 24px; background: var(--gold); border: none; cursor: pointer; border-radius: 8px; font-weight: bold; margin: 5px; color: black; }
-        .preview-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; padding: 20px; }
-        .card { background: #1a1a1a; padding: 15px; border-radius: 15px; border: 1px solid #333; }
-        canvas { display: block; margin: 20px auto; border-radius: 15px; border: 3px solid var(--gold); max-width: 95%; background: #000; }
+        .controls { background: #111; padding: 20px; border-radius: 0 0 20px 20px; border-bottom: 3px solid var(--gold); position: sticky; top: 0; z-index: 100; }
+        textarea { width: 95%; height: 80px; background: #222; color: var(--gold); border: 1px solid #444; border-radius: 10px; padding: 10px; margin: 10px 0; }
+        button { padding: 12px 20px; background: var(--gold); border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin: 5px; color: black; }
+        canvas { display: block; margin: 20px auto; border-radius: 15px; border: 4px solid var(--gold); max-width: 95%; background: black; }
     </style>
 </head>
 <body>
@@ -21,143 +19,111 @@
 <div class="controls">
     <h2>🕌 Islamic AI Content Factory</h2>
     <textarea id="jsonInput" placeholder="Paste JSON here..."></textarea><br>
-    <button onclick="processData()">📸 Load Content</button>
-    <button id="downloadReelBtn" style="background:var(--accent); display:none;" onclick="downloadReel()">📥 Download Reel Video</button>
-    <div id="status"></div>
+    <button onclick="processData()">🎨 Process JSON</button>
+    <button onclick="downloadAll()" style="background:#fff">📥 Download All Slides</button>
 </div>
 
-<div id="previewGrid" class="preview-grid"></div>
+<div id="buttonArea" style="margin:10px;"></div>
 <canvas id="mainCanvas" width="1080" height="1920"></canvas>
 
 <script>
 let currentData = null;
-const bgUrl = "https://images.unsplash.com/photo-1542810634-71277d95dcbb?q=80&w=1080";
 
 function processData() {
     try {
         let raw = document.getElementById('jsonInput').value.trim();
         raw = raw.replace(/```json|```/g, "").trim();
         currentData = JSON.parse(raw);
-        document.getElementById('status').innerText = "Ready! ✅";
-        renderUI();
-        document.getElementById('downloadReelBtn').style.display = "inline-block";
+        renderButtons();
+        drawSlide(1);
     } catch (e) {
-        alert("JSON Error! Please check your format.");
+        alert("JSON Error! Check your formatting.");
     }
 }
 
-function renderUI() {
-    const grid = document.getElementById('previewGrid');
-    grid.innerHTML = `
-        <div class="card"><h4>Slides</h4>
-            <button onclick="drawSlide(1)">Preview Slide 1</button>
-            <button onclick="drawSlide(2)">Preview Slide 2</button>
-            <button onclick="drawSlide(3)">Preview Slide 3</button>
-            <button onclick="drawSlide(4)">Preview Slide 4</button>
-            <button onclick="downloadCurrentSlide()" style="background:#fff">📥 Download JPG</button>
-        </div>
+function renderButtons() {
+    const area = document.getElementById('buttonArea');
+    area.innerHTML = `
+        <button onclick="drawSlide(1)">Slide 1</button>
+        <button onclick="drawSlide(2)">Slide 2</button>
+        <button onclick="drawSlide(3)">Slide 3</button>
+        <button onclick="drawSlide(4)">Slide 4</button>
     `;
-    drawSlide(1); // Default view
-}
-
-async function drawBackground(ctx) {
-    ctx.fillStyle = "#000";
-    ctx.fillRect(0, 0, 1080, 1920);
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.src = bgUrl;
-    return new Promise(resolve => {
-        img.onload = () => {
-            ctx.globalAlpha = 0.3;
-            ctx.drawImage(img, 0, 0, 1080, 1920);
-            ctx.globalAlpha = 1.0;
-            ctx.strokeStyle = "gold";
-            ctx.lineWidth = 25;
-            ctx.strokeRect(50, 50, 980, 1820);
-            resolve();
-        };
-    });
 }
 
 async function drawSlide(num) {
     const canvas = document.getElementById('mainCanvas');
     const ctx = canvas.getContext('2d');
-    await drawBackground(ctx);
     
+    // Reset Canvas
+    ctx.fillStyle = "#0a0a0a";
+    ctx.fillRect(0,0,1080,1920);
+    
+    // Draw Frame
+    ctx.strokeStyle = "gold"; ctx.lineWidth = 30; ctx.strokeRect(60,60,960,1800);
     ctx.textAlign = "center";
-    const maxWidth = 880;
 
-    if (num === 1) { // 3-Language Question
-        drawText(ctx, "ENGLISH", 400, "#FFD700", "bold 40px Poppins");
-        drawWrappedText(ctx, currentData.en.q, 480, "white", "bold 55px Poppins", maxWidth);
-        
-        drawText(ctx, "URDU", 850, "#00ffcc", "bold 40px Poppins");
-        drawWrappedText(ctx, currentData.ur.q, 950, "#00ffcc", "60px 'Noto Nastaliq Urdu'", maxWidth);
-        
-        drawText(ctx, "HINGLISH", 1350, "#aaa", "bold 40px Poppins");
-        drawWrappedText(ctx, currentData.hi.q, 1430, "white", "45px Poppins", maxWidth);
+    if (num === 1) {
+        drawBoxText(ctx, "ENGLISH QUESTION", currentData.en.q, 450, "white", "bold 48px Poppins");
+        drawBoxText(ctx, "اردو سوال", currentData.ur.q, 950, "#00ffcc", "60px 'Noto Nastaliq Urdu'");
+        drawBoxText(ctx, "HINGLISH", currentData.hi.q, 1450, "#ddd", "42px Poppins");
     } 
-    else if (num === 2) { // Options
-        drawText(ctx, "CHOOSE THE OPTION", 400, "#FFD700", "bold 70px Poppins");
+    else if (num === 2) {
+        drawBoxText(ctx, "CHOOSE THE OPTION", "", 250, "gold", "bold 60px Poppins");
         const opts = currentData.en.options;
-        const startY = 700;
-        ["A", "B", "C", "D"].forEach((letter, i) => {
-            ctx.fillStyle = "white";
-            ctx.font = "60px Poppins";
-            ctx.fillText(`${letter}) ${opts[letter]}`, 540, startY + (i * 150));
+        const urOpts = currentData.ur.options;
+        ["A", "B", "C", "D"].forEach((l, i) => {
+            let y = 550 + (i * 300);
+            ctx.fillStyle = "white"; ctx.font = "bold 52px Poppins";
+            ctx.fillText(`${l}) ${opts[l]}`, 540, y);
+            ctx.fillStyle = "#00ffcc"; ctx.font = "34px 'Noto Nastaliq Urdu'";
+            ctx.fillText(urOpts[l], 540, y + 80);
         });
     }
-    else if (num === 3) { // Reveal
-        drawText(ctx, "CORRECT ANSWER", 700, "#FFD700", "bold 80px Poppins");
-        ctx.fillStyle = "white";
-        ctx.font = "bold 90px Poppins";
-        let a = currentData.en.a;
-        ctx.fillText(`${a}) ${currentData.en.options[a]}`, 540, 950);
+    else if (num === 3) {
+        const a = currentData.en.a;
+        drawBoxText(ctx, "CORRECT ANSWER", 600, "gold", "bold 80px Poppins");
+        drawBoxText(ctx, "", `${a}) ${currentData.en.options[a]}`, 800, "white", "bold 70px Poppins");
+        drawBoxText(ctx, "", currentData.ur.options[a], 1000, "#00ffcc", "65px 'Noto Nastaliq Urdu'");
     }
-    else if (num === 4) { // Explanation
-        drawText(ctx, "EXPLANATION", 400, "#FFD700", "bold 60px Poppins");
-        drawWrappedText(ctx, currentData.en.exp, 600, "white", "40px Poppins", maxWidth);
-        drawWrappedText(ctx, currentData.ur.exp, 1100, "#00ffcc", "45px 'Noto Nastaliq Urdu'", maxWidth);
+    else if (num === 4) {
+        drawBoxText(ctx, "EXPLANATION", 300, "gold", "bold 60px Poppins");
+        drawBoxText(ctx, "EN", currentData.en.exp, 550, "white", "36px Poppins");
+        drawBoxText(ctx, "UR", currentData.ur.exp, 1050, "#00ffcc", "42px 'Noto Nastaliq Urdu'");
     }
 }
 
-function drawText(ctx, text, y, color, font) {
-    ctx.fillStyle = color;
-    ctx.font = font;
-    ctx.fillText(text, 540, y);
-}
+function drawBoxText(ctx, label, text, y, color, font) {
+    if(label) {
+        ctx.fillStyle = "gold"; ctx.font = "bold 28px Poppins";
+        ctx.fillText(label, 540, y - 80);
+    }
+    
+    ctx.fillStyle = color; ctx.font = font;
+    if(!text) return;
 
-function drawWrappedText(ctx, text, y, color, font, maxWidth) {
-    ctx.fillStyle = color;
-    ctx.font = font;
+    let maxWidth = 800; // Restricted width to prevent overflow
     let words = text.split(' ');
     let line = '';
-    let lineHeight = parseInt(font) * 1.3;
+    let startY = y;
+    let lineHeight = parseInt(font) * 1.4;
     
     for (let n = 0; n < words.length; n++) {
         let testLine = line + words[n] + ' ';
         if (ctx.measureText(testLine).width > maxWidth && n > 0) {
-            ctx.fillText(line, 540, y);
+            ctx.fillText(line, 540, startY);
             line = words[n] + ' ';
-            y += lineHeight;
+            startY += lineHeight;
         } else { line = testLine; }
     }
-    ctx.fillText(line, 540, y);
+    ctx.fillText(line, 540, startY);
 }
 
-function downloadCurrentSlide() {
-    const link = document.createElement('a');
-    link.download = 'Islamic_Slide.jpg';
-    link.href = document.getElementById('mainCanvas').toDataURL("image/jpeg", 0.8);
-    link.click();
-}
-
-async function downloadReel() {
-    alert("Generating Reel... Your browser will now prompt to download 4 slides in sequence. Combine them in CapCut/Instagram.");
+async function downloadAll() {
     for(let i=1; i<=4; i++) {
         await drawSlide(i);
         const link = document.createElement('a');
-        link.download = `Reel_Part_${i}.jpg`;
+        link.download = `Slide_${i}.jpg`;
         link.href = document.getElementById('mainCanvas').toDataURL("image/jpeg", 0.9);
         link.click();
         await new Promise(r => setTimeout(r, 1000));
