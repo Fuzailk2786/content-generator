@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import * as fabric from 'fabric';
+import JSZip from 'jszip'; // New Import
 
 const App = () => {
   const [fabricCanvas, setFabricCanvas] = useState<any>(null);
@@ -36,99 +37,113 @@ const App = () => {
     }
   };
 
-  const drawSlide = (slideNum: number, data: any) => {
+  // Helper function to load image as a Promise (needed for ZIP)
+  const loadImage = (url: string) => {
+    return new Promise((resolve) => {
+      (fabric as any).fabric.Image.fromURL(url, (img: any) => resolve(img), { crossOrigin: 'anonymous' });
+    });
+  };
+
+  const drawSlide = async (slideNum: number, data: any) => {
     if (!fabricCanvas) return;
     const f = (fabric as any).fabric;
     fabricCanvas.clear();
 
     const bgUrl = bgLibrary[slideNum - 1] || bgLibrary[0];
+    const img: any = await loadImage(bgUrl);
 
-    f.Image.fromURL(bgUrl, (img: any) => {
-      img.set({ originX: 'center', originY: 'center', left: 540, top: 960 });
-      const scale = Math.max(1080 / img.width, 1920 / img.height);
-      img.scale(scale);
-      fabricCanvas.add(img);
+    img.set({ originX: 'center', originY: 'center', left: 540, top: 960 });
+    const scale = Math.max(1080 / img.width, 1920 / img.height);
+    img.scale(scale);
+    fabricCanvas.add(img);
 
-      fabricCanvas.add(new f.Rect({
-        left: 540, top: 960, width: 1080, height: 1920,
-        fill: 'rgba(0,0,0,0.7)', originX: 'center', originY: 'center',
-      }));
+    fabricCanvas.add(new f.Rect({
+      left: 540, top: 960, width: 1080, height: 1920,
+      fill: 'rgba(0,0,0,0.7)', originX: 'center', originY: 'center',
+    }));
 
-      fabricCanvas.add(new f.Rect({
-        left: 540, top: 960, width: 950, height: 1780,
-        fill: 'transparent', stroke: '#D4AF37', strokeWidth: 12, originX: 'center', originY: 'center', rx: 25,
-      }));
+    fabricCanvas.add(new f.Rect({
+      left: 540, top: 960, width: 950, height: 1780,
+      fill: 'transparent', stroke: '#D4AF37', strokeWidth: 12, originX: 'center', originY: 'center', rx: 25,
+    }));
 
-      // --- HELPER FUNCTION FOR DYNAMIC STACKING ---
-      let currentY = 300; // Start position
+    let currentY = 300;
 
-      const addStackedText = (text: string, color: string, size: number, font: string, spacing = 40) => {
-        const textbox = new f.Textbox(text || '', {
-          left: 540,
-          top: currentY,
-          width: 850,
-          originX: 'center',
-          fontSize: size,
-          fill: color,
-          textAlign: 'center',
-          fontFamily: font,
-          fontWeight: 'bold',
-          shadow: '3px 3px 15px rgba(0,0,0,1)',
-        });
-        fabricCanvas.add(textbox);
-        // Move currentY down by the height of this text + spacing
-        currentY += (textbox.height + spacing);
-        return textbox;
-      };
+    const addStackedText = (text: string, color: string, size: number, font: string, spacing = 40) => {
+      const textbox = new f.Textbox(text || '', {
+        left: 540, top: currentY, width: 850, originX: 'center',
+        fontSize: size, fill: color, textAlign: 'center',
+        fontFamily: font, fontWeight: 'bold', shadow: '3px 3px 15px rgba(0,0,0,1)',
+      });
+      fabricCanvas.add(textbox);
+      currentY += (textbox.height + spacing);
+      return textbox;
+    };
 
-      if (slideNum === 1) {
-        currentY = 400; // Reset for Slide 1
-        addStackedText(data.en.q, '#D4AF37', 58, 'Montserrat', 60);
-        addStackedText(data.ur.q, '#ffffff', 70, 'Amiri', 60);
-        addStackedText(data.hi.q, '#ccc', 45, 'Source Sans 3', 0);
-      } 
-      else if (slideNum === 2) {
-        currentY = 250;
-        addStackedText('OPTIONS / اختیارات', '#D4AF37', 55, 'Montserrat', 80);
-        ['A', 'B', 'C', 'D'].forEach((l) => {
-          addStackedText(`${l}) ${data.en.options[l]}`, 'white', 45, 'Montserrat', 15);
-          addStackedText(data.ur.options[l], '#D4AF37', 40, 'Amiri', 15);
-          addStackedText(data.hi.options[l], '#aaa', 30, 'Source Sans 3', 40);
-        });
-      } 
-      else if (slideNum === 3) {
-        currentY = 450;
-        addStackedText('CORRECT ANSWER', '#D4AF37', 80, 'Montserrat', 60);
-        const a = data.en.a;
-        addStackedText(`${a}) ${data.en.options[a]}`, 'white', 90, 'Montserrat', 60);
-        addStackedText(data.ur.options[a], '#ffffff', 85, 'Amiri', 60);
-        addStackedText(data.hi.options[a], '#aaa', 60, 'Source Sans 3', 0);
-      } 
-      else if (slideNum === 4) {
-        currentY = 300;
-        addStackedText('EXPLANATION / وضاحت', '#D4AF37', 65, 'Montserrat', 80);
-        addStackedText(data.en.exp, 'white', 42, 'Source Sans 3', 60);
-        addStackedText(data.ur.exp, '#eee', 52, 'Amiri', 60);
-        addStackedText(data.hi.exp, '#ccc', 38, 'Source Sans 3', 0);
-      }
+    if (slideNum === 1) {
+      currentY = 400;
+      addStackedText(data.en.q, '#D4AF37', 58, 'Montserrat', 60);
+      addStackedText(data.ur.q, '#ffffff', 70, 'Amiri', 60);
+      addStackedText(data.hi.q, '#ccc', 45, 'Source Sans 3', 0);
+    } else if (slideNum === 2) {
+      currentY = 250;
+      addStackedText('OPTIONS / اختیارات', '#D4AF37', 55, 'Montserrat', 80);
+      ['A', 'B', 'C', 'D'].forEach((l) => {
+        addStackedText(`${l}) ${data.en.options[l]}`, 'white', 45, 'Montserrat', 15);
+        addStackedText(data.ur.options[l], '#D4AF37', 40, 'Amiri', 15);
+        addStackedText(data.hi.options[l], '#aaa', 30, 'Source Sans 3', 40);
+      });
+    } else if (slideNum === 3) {
+      currentY = 450;
+      addStackedText('CORRECT ANSWER', '#D4AF37', 80, 'Montserrat', 60);
+      const a = data.en.a;
+      addStackedText(`${a}) ${data.en.options[a]}`, 'white', 90, 'Montserrat', 60);
+      addStackedText(data.ur.options[a], '#ffffff', 85, 'Amiri', 60);
+      addStackedText(data.hi.options[a], '#aaa', 60, 'Source Sans 3', 0);
+    } else if (slideNum === 4) {
+      currentY = 300;
+      addStackedText('EXPLANATION / وضاحت', '#D4AF37', 65, 'Montserrat', 80);
+      addStackedText(data.en.exp, 'white', 42, 'Source Sans 3', 60);
+      addStackedText(data.ur.exp, '#eee', 52, 'Amiri', 60);
+      addStackedText(data.hi.exp, '#ccc', 38, 'Source Sans 3', 0);
+    }
+    fabricCanvas.renderAll();
+  };
 
-      fabricCanvas.renderAll();
-    }, { crossOrigin: 'anonymous' });
+  // --- NEW: DOWNLOAD ALL AS ZIP ---
+  const downloadAllAsZip = async () => {
+    if (!jsonData) return alert("Paste JSON first");
+    const zip = new JSZip();
+    const cleanJson = jsonData.replace(/```json|```/g, '').trim();
+    const data = JSON.parse(cleanJson);
+
+    alert("Generating ZIP... Please wait.");
+
+    for (let i = 1; i <= 4; i++) {
+      await drawSlide(i, data);
+      const dataURL = fabricCanvas.toDataURL({ format: 'jpeg', quality: 1 });
+      const base64Data = dataURL.replace(/^data:image\/(png|jpeg);base64,/, "");
+      zip.file(`Slide_${i}.jpg`, base64Data, { base64: true });
+    }
+
+    const content = await zip.generateAsync({ type: "blob" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(content);
+    link.download = "Islamic_Carousel_Pack.zip";
+    link.click();
+    
+    // Reset to current active slide
+    handleRedraw(activeSlide);
   };
 
   const copyCaption = () => {
     try {
       const data = JSON.parse(jsonData.replace(/```json|```/g, '').trim());
-      const highReach = ['#IslamicQuiz', '#Deen', '#Knowledge', '#ExplorePage', '#Viral'];
-      const mediumReach = ['#IslamicReminders', '#MuslimUmmah', '#DailyHadith', '#QuranVerses', '#IslamicEducation'];
-      const nicheReach = ['#ProphetStories', '#IslamicHistory', '#SunnahLife', '#IslamicPosts', '#Dawah'];
-      const localReach = ['#MuslimsInIndia', '#BangaloreMuslims'];
-      const allHashtags = [...highReach, ...mediumReach, ...nicheReach, ...localReach].join(' ');
-
-      const fullCaption = `❓ QUESTION:\n${data.en.q}\n\n✅ ANSWER: ${data.en.a}) ${data.en.options[data.en.a]}\n\n💡 DID YOU KNOW?\n${data.en.exp}\n\n. . .\n${allHashtags}`;
+      const tags = "#IslamicQuiz #Deen #Knowledge #ExplorePage #Viral #IslamicReminders #MuslimUmmah #DailyHadith #QuranVerses #IslamicEducation #ProphetStories #IslamicHistory #SunnahLife #IslamicPosts #Dawah #MuslimsInIndia #BangaloreMuslims";
+      const fullCaption = `❓ QUESTION:\n${data.en.q}\n\n✅ ANSWER: ${data.en.a}) ${data.en.options[data.en.a]}\n\n💡 DID YOU KNOW?\n${data.en.exp}\n\n. . .\n${tags}`;
       navigator.clipboard.writeText(fullCaption);
-      alert('Professional Caption & Hashtags Copied! 🚀');
-    } catch (e) { alert("Please paste your JSON first."); }
+      alert('Caption Copied! 🚀');
+    } catch (e) { alert("Paste JSON first"); }
   };
 
   return (
@@ -144,14 +159,17 @@ const App = () => {
             <button key={n} onClick={() => setActiveSlide(n)} style={n === activeSlide ? activeBtnStyle : btnStyle}>Slide {n}</button>
           ))}
         </div>
-        <div style={{ marginTop: '15px' }}>
-          <button onClick={copyCaption} style={btnStyle}>📝 Copy Caption</button>
-          <button onClick={() => {
-            const link = document.createElement('a');
-            link.download = `Slide_${activeSlide}.jpg`;
-            link.href = fabricCanvas.toDataURL({ format: 'jpeg', quality: 1 });
-            link.click();
-          }} style={downloadBtnStyle}>📥 Download Slide</button>
+        <div style={{ marginTop: '15px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '10px' }}>
+            <button onClick={copyCaption} style={btnStyle}>📝 Copy Caption</button>
+            <button onClick={() => {
+              const link = document.createElement('a');
+              link.download = `Slide_${activeSlide}.jpg`;
+              link.href = fabricCanvas.toDataURL({ format: 'jpeg', quality: 1 });
+              link.click();
+            }} style={downloadBtnStyle}>📥 Download Slide</button>
+          </div>
+          <button onClick={downloadAllAsZip} style={zipBtnStyle}>📦 Download All as ZIP</button>
         </div>
       </div>
       <canvas id="canvas" style={{ border: '4px solid #1a1a1a', borderRadius: '25px', maxWidth: '100%' }} />
@@ -165,5 +183,6 @@ const btnStyle = { padding: '10px 15px', margin: '5px', borderRadius: '8px', cur
 const startBtnStyle = { ...btnStyle, background: '#D4AF37', color: 'black', width: '100%' };
 const activeBtnStyle = { ...btnStyle, background: '#D4AF37', color: 'black' };
 const downloadBtnStyle = { ...btnStyle, background: 'white', color: 'black' };
+const zipBtnStyle = { ...btnStyle, background: '#00ffcc', color: 'black', width: '100%' };
 
 export default App;
