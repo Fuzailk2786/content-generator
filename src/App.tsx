@@ -3,15 +3,14 @@ import * as fabric from 'fabric';
 
 const App = () => {
   const [fabricCanvas, setFabricCanvas] = useState<any>(null);
-  const [jsonData, setJsonData] = useState("");
+  const [jsonData, setJsonData] = useState('');
   const [activeSlide, setActiveSlide] = useState(1);
 
-  // High-Resolution Islamic Backgrounds
   const bgLibrary = [
-    "https://images.unsplash.com/photo-1542810634-71277d95dcbb?q=80&w=1080", // Slide 1
-    "https://images.unsplash.com/photo-1564769625905-50e93615e769?q=80&w=1080", // Slide 2
-    "https://images.unsplash.com/photo-1590076215667-875d4ef2d97e?q=80&w=1080", // Slide 3
-    "https://images.unsplash.com/photo-1519817650390-64a93db51149?q=80&w=1080"  // Slide 4
+    'https://images.unsplash.com/photo-1542810634-71277d95dcbb?q=80&w=1080',
+    'https://images.unsplash.com/photo-1564769625905-50e93615e769?q=80&w=1080',
+    'https://images.unsplash.com/photo-1590076215667-875d4ef2d97e?q=80&w=1080',
+    'https://images.unsplash.com/photo-1519817650390-64a93db51149?q=80&w=1080',
   ];
 
   useEffect(() => {
@@ -25,15 +24,15 @@ const App = () => {
 
   useEffect(() => {
     if (jsonData) handleRedraw(activeSlide);
-  }, [activeSlide]);
+  }, [activeSlide, jsonData]);
 
   const handleRedraw = (slideNumber: number) => {
     try {
-      const cleanJson = jsonData.replace(/```json|```/g, "").trim();
+      const cleanJson = jsonData.replace(/```json|```/g, '').trim();
       const data = JSON.parse(cleanJson);
       drawSlide(slideNumber, data);
     } catch (e) {
-      console.log("Waiting for JSON...");
+      console.log('Waiting for JSON...');
     }
   };
 
@@ -42,108 +41,117 @@ const App = () => {
     const f = (fabric as any).fabric;
     fabricCanvas.clear();
 
-    // Use a unique index for backgrounds. If 4 slides share 1 theme, use index 0.
     const bgUrl = bgLibrary[slideNum - 1] || bgLibrary[0];
 
     f.Image.fromURL(bgUrl, (img: any) => {
-      // 1. Background Setup
       img.set({ originX: 'center', originY: 'center', left: 540, top: 960 });
       const scale = Math.max(1080 / img.width, 1920 / img.height);
       img.scale(scale);
       fabricCanvas.add(img);
 
-      // 2. Darkening Layer
       fabricCanvas.add(new f.Rect({
         left: 540, top: 960, width: 1080, height: 1920,
-        fill: 'rgba(0,0,0,0.7)', originX: 'center', originY: 'center'
+        fill: 'rgba(0,0,0,0.7)', originX: 'center', originY: 'center',
       }));
 
-      // 3. Gold Border
       fabricCanvas.add(new f.Rect({
         left: 540, top: 960, width: 950, height: 1780,
-        fill: 'transparent', stroke: '#D4AF37', strokeWidth: 12, originX: 'center', originY: 'center', rx: 25
+        fill: 'transparent', stroke: '#D4AF37', strokeWidth: 12, originX: 'center', originY: 'center', rx: 25,
       }));
 
-      const createText = (text: string, top: number, color: string, size: number, font: string) => {
-        return new f.Textbox(text || "", {
-          left: 540, top, width: 850, originX: 'center',
-          fontSize: size, fill: color, textAlign: 'center',
-          fontFamily: font, fontWeight: 'bold', shadow: '3px 3px 15px rgba(0,0,0,1)'
+      // --- HELPER FUNCTION FOR DYNAMIC STACKING ---
+      let currentY = 300; // Start position
+
+      const addStackedText = (text: string, color: string, size: number, font: string, spacing = 40) => {
+        const textbox = new f.Textbox(text || '', {
+          left: 540,
+          top: currentY,
+          width: 850,
+          originX: 'center',
+          fontSize: size,
+          fill: color,
+          textAlign: 'center',
+          fontFamily: font,
+          fontWeight: 'bold',
+          shadow: '3px 3px 15px rgba(0,0,0,1)',
         });
+        fabricCanvas.add(textbox);
+        // Move currentY down by the height of this text + spacing
+        currentY += (textbox.height + spacing);
+        return textbox;
       };
 
-      // 4. Content Logic
       if (slideNum === 1) {
-        fabricCanvas.add(createText(data.en.q, 400, '#D4AF37', 58, 'Montserrat'));
-        fabricCanvas.add(createText(data.ur.q, 850, '#ffffff', 70, 'Amiri'));
-        fabricCanvas.add(createText(data.hi.q, 1300, '#ccc', 45, 'Source Sans 3'));
+        currentY = 400; // Reset for Slide 1
+        addStackedText(data.en.q, '#D4AF37', 58, 'Montserrat', 60);
+        addStackedText(data.ur.q, '#ffffff', 70, 'Amiri', 60);
+        addStackedText(data.hi.q, '#ccc', 45, 'Source Sans 3', 0);
       } 
       else if (slideNum === 2) {
-        fabricCanvas.add(createText("OPTIONS / اختیارات", 250, "#D4AF37", 50, 'Montserrat'));
-        ['A', 'B', 'C', 'D'].forEach((l, i) => {
-          let y = 500 + (i * 320);
-          fabricCanvas.add(createText(`${l}) ${data.en.options[l]}`, y, "white", 45, 'Montserrat'));
-          fabricCanvas.add(createText(data.ur.options[l], y + 80, "#D4AF37", 40, 'Amiri'));
-          fabricCanvas.add(createText(data.hi.options[l], y + 155, "#aaa", 32, 'Source Sans 3'));
+        currentY = 250;
+        addStackedText('OPTIONS / اختیارات', '#D4AF37', 55, 'Montserrat', 80);
+        ['A', 'B', 'C', 'D'].forEach((l) => {
+          addStackedText(`${l}) ${data.en.options[l]}`, 'white', 45, 'Montserrat', 15);
+          addStackedText(data.ur.options[l], '#D4AF37', 40, 'Amiri', 15);
+          addStackedText(data.hi.options[l], '#aaa', 30, 'Source Sans 3', 40);
         });
       } 
       else if (slideNum === 3) {
+        currentY = 450;
+        addStackedText('CORRECT ANSWER', '#D4AF37', 80, 'Montserrat', 60);
         const a = data.en.a;
-        fabricCanvas.add(createText("CORRECT ANSWER", 400, "#D4AF37", 80, 'Montserrat'));
-        fabricCanvas.add(createText(`${a}) ${data.en.options[a]}`, 750, "white", 90, 'Montserrat'));
-        fabricCanvas.add(createText(data.ur.options[a], 1000, "#ffffff", 85, 'Amiri'));
-        fabricCanvas.add(createText(data.hi.options[a], 1300, "#aaa", 60, 'Source Sans 3'));
+        addStackedText(`${a}) ${data.en.options[a]}`, 'white', 90, 'Montserrat', 60);
+        addStackedText(data.ur.options[a], '#ffffff', 85, 'Amiri', 60);
+        addStackedText(data.hi.options[a], '#aaa', 60, 'Source Sans 3', 0);
       } 
       else if (slideNum === 4) {
-        fabricCanvas.add(createText("EXPLANATION / وضاحت", 250, "#D4AF37", 60, 'Montserrat'));
-        fabricCanvas.add(createText(data.en.exp, 450, "white", 40, 'Source Sans 3'));
-        fabricCanvas.add(createText(data.ur.exp, 1000, "#eee", 50, 'Amiri'));
-        fabricCanvas.add(createText(data.hi.exp, 1500, "#ccc", 35, 'Source Sans 3'));
+        currentY = 300;
+        addStackedText('EXPLANATION / وضاحت', '#D4AF37', 65, 'Montserrat', 80);
+        addStackedText(data.en.exp, 'white', 42, 'Source Sans 3', 60);
+        addStackedText(data.ur.exp, '#eee', 52, 'Amiri', 60);
+        addStackedText(data.hi.exp, '#ccc', 38, 'Source Sans 3', 0);
       }
+
       fabricCanvas.renderAll();
     }, { crossOrigin: 'anonymous' });
   };
 
   const copyCaption = () => {
     try {
-      const data = JSON.parse(jsonData.replace(/```json|```/g, "").trim());
-      
-      // Hashtag Strategy: 5-5-5-2 Split
-      const highReach = ["#IslamicQuiz", "#Deen", "#Knowledge", "#ExplorePage", "#Viral"];
-      const mediumReach = ["#IslamicReminders", "#MuslimUmmah", "#DailyHadith", "#QuranVerses", "#IslamicEducation"];
-      const nicheReach = ["#ProphetStories", "#IslamicHistory", "#SunnahLife", "#IslamicPosts", "#Dawah"];
-      const localReach = ["#MuslimsInIndia", "#BangaloreMuslims"]; // Based on your region
+      const data = JSON.parse(jsonData.replace(/```json|```/g, '').trim());
+      const highReach = ['#IslamicQuiz', '#Deen', '#Knowledge', '#ExplorePage', '#Viral'];
+      const mediumReach = ['#IslamicReminders', '#MuslimUmmah', '#DailyHadith', '#QuranVerses', '#IslamicEducation'];
+      const nicheReach = ['#ProphetStories', '#IslamicHistory', '#SunnahLife', '#IslamicPosts', '#Dawah'];
+      const localReach = ['#MuslimsInIndia', '#BangaloreMuslims'];
+      const allHashtags = [...highReach, ...mediumReach, ...nicheReach, ...localReach].join(' ');
 
-      const allHashtags = [...highReach, ...mediumReach, ...nicheReach, ...localReach].join(" ");
-
-      const fullCaption = `❓ QUESTION:\n${data.en.q}\n\n` +
-                          `✅ ANSWER: ${data.en.a}) ${data.en.options[data.en.a]}\n\n` +
-                          `💡 DID YOU KNOW?\n${data.en.exp}\n\n` +
-                          `. . .\n` +
-                          `${allHashtags}`;
-
+      const fullCaption = `❓ QUESTION:\n${data.en.q}\n\n✅ ANSWER: ${data.en.a}) ${data.en.options[data.en.a]}\n\n💡 DID YOU KNOW?\n${data.en.exp}\n\n. . .\n${allHashtags}`;
       navigator.clipboard.writeText(fullCaption);
-      alert("Professional Caption & Hashtags Copied! 🚀");
-    } catch(e) { 
-      alert("Please paste your JSON and click 'Start Engine' first."); 
-    }
+      alert('Professional Caption & Hashtags Copied! 🚀');
+    } catch (e) { alert("Please paste your JSON first."); }
   };
+
   return (
     <div style={{ background: '#000', minHeight: '100vh', color: 'white', padding: '20px', textAlign: 'center' }}>
       <div style={panelStyle}>
-        <h2 style={{color: '#D4AF37'}}>🕌 Islamic Content Studio</h2>
+        <h2 style={{ color: '#D4AF37' }}>🕌 Islamic Content Studio</h2>
         <textarea placeholder="Paste JSON here..." onChange={(e) => setJsonData(e.target.value)} style={inputStyle} />
         <div style={{ margin: '15px 0' }}>
           <button onClick={() => handleRedraw(activeSlide)} style={startBtnStyle}>🚀 Start Content Engine</button>
         </div>
         <div style={{ display: 'flex', justifyContent: 'center' }}>
-          {[1, 2, 3, 4].map(n => (
+          {[1, 2, 3, 4].map((n) => (
             <button key={n} onClick={() => setActiveSlide(n)} style={n === activeSlide ? activeBtnStyle : btnStyle}>Slide {n}</button>
           ))}
         </div>
         <div style={{ marginTop: '15px' }}>
           <button onClick={copyCaption} style={btnStyle}>📝 Copy Caption</button>
-          <button onClick={() => { const link = document.createElement('a'); link.download = `Slide_${activeSlide}.jpg`; link.href = fabricCanvas.toDataURL({format: 'jpeg', quality: 1}); link.click(); }} style={downloadBtnStyle}>📥 Download Slide</button>
+          <button onClick={() => {
+            const link = document.createElement('a');
+            link.download = `Slide_${activeSlide}.jpg`;
+            link.href = fabricCanvas.toDataURL({ format: 'jpeg', quality: 1 });
+            link.click();
+          }} style={downloadBtnStyle}>📥 Download Slide</button>
         </div>
       </div>
       <canvas id="canvas" style={{ border: '4px solid #1a1a1a', borderRadius: '25px', maxWidth: '100%' }} />
