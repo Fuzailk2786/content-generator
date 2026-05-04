@@ -1,155 +1,115 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import * as fabric from 'fabric';
 
 const App = () => {
   const [fabricCanvas, setFabricCanvas] = useState<any>(null);
-  const [jsonData, setJsonData] = useState('');
+  const [jsonData, setJsonData] = useState("");
+  const [activeSlide, setActiveSlide] = useState(1);
 
   useEffect(() => {
-    // We target the ID 'canvas' from the HTML below
     const canvas = new (fabric as any).fabric.StaticCanvas('canvas', {
       width: 1080,
-      height: 1350,
-      backgroundColor: '#0a0a0a',
+      height: 1920,
+      backgroundColor: '#050505',
     });
     setFabricCanvas(canvas);
-
-    // Cleanup function to prevent duplicate canvases
-    return () => {
-      canvas.dispose();
-    };
+    return () => canvas.dispose();
   }, []);
 
-  const generateSlides = () => {
+  // CRITICAL FIX: This tells the app to redraw WHENEVER the slide number changes
+  useEffect(() => {
+    if (jsonData) {
+      handleRedraw(activeSlide);
+    }
+  }, [activeSlide]);
+
+  const handleRedraw = (slideNumber: number) => {
     try {
-      // Cleaning the JSON from any AI-added text
-      const cleanJson = jsonData.replace(/```json|```/g, '').trim();
+      const cleanJson = jsonData.replace(/```json|```/g, "").trim();
       const data = JSON.parse(cleanJson);
-      drawSlide(data);
+      drawSlide(slideNumber, data);
     } catch (e) {
-      alert('JSON Error: Make sure you copied the whole block!');
+      console.log("Waiting for valid JSON...");
     }
   };
 
-  const drawSlide = (data: any) => {
+  const drawSlide = (slideNum: number, data: any) => {
     if (!fabricCanvas) return;
-    const f = (fabric as any).fabric; // Shortcut to the fabric library
-
+    const f = (fabric as any).fabric;
     fabricCanvas.clear();
-    fabricCanvas.setBackgroundColor(
-      '#0a0a0a',
-      fabricCanvas.renderAll.bind(fabricCanvas)
-    );
+    fabricCanvas.setBackgroundColor('#050505', fabricCanvas.renderAll.bind(fabricCanvas));
 
-    // 1. Add Gold Border
-    const rect = new f.Rect({
-      left: 540, // Center it
-      top: 675,
-      width: 980,
-      height: 1250,
-      fill: 'transparent',
-      stroke: '#FFD700',
-      strokeWidth: 20,
-      originX: 'center',
-      originY: 'center',
-      selectable: false,
-    });
-    fabricCanvas.add(rect);
+    // Gold Frame
+    fabricCanvas.add(new f.Rect({
+      left: 540, top: 960, width: 980, height: 1820,
+      fill: 'transparent', stroke: '#D4AF37', strokeWidth: 20, originX: 'center', originY: 'center'
+    }));
 
-    // 2. Multilingual Content stacking
-    const createText = (
-      str: string,
-      top: number,
-      color: string,
-      fontSize: number,
-      isUrdu = false
-    ) => {
-      return new f.Textbox(str, {
-        left: 540,
-        top: top,
-        width: 880,
-        originX: 'center',
-        fontSize: fontSize,
-        fill: color,
-        textAlign: 'center',
-        fontFamily: isUrdu ? 'Noto Nastaliq Urdu' : 'Poppins',
-        fontWeight: 'bold',
+    const createText = (text: string, top: number, color: string, size: number, font: string) => {
+      return new f.Textbox(text || "", {
+        left: 540, top, width: 880, originX: 'center',
+        fontSize: size, fill: color, textAlign: 'center',
+        fontFamily: font, fontWeight: 'bold'
       });
     };
 
-    const enQ = createText(data.en.q, 200, '#FFD700', 50);
-    const urQ = createText(data.ur.q, 600, '#00ffcc', 60, true);
-    const hiQ = createText(data.hi.q, 1000, '#ffffff', 40);
-
-    fabricCanvas.add(enQ, urQ, hiQ);
+    if (slideNum === 1) {
+      fabricCanvas.add(createText(data.en?.q, 350, '#D4AF37', 55, 'Montserrat'));
+      fabricCanvas.add(createText(data.ur?.q, 800, '#ffffff', 75, 'Amiri'));
+      fabricCanvas.add(createText(data.hi?.q, 1300, '#aaa', 45, 'Source Sans 3'));
+    } 
+    else if (slideNum === 2) {
+      fabricCanvas.add(createText("CHOOSE ONE", 250, "#D4AF37", 55, 'Montserrat'));
+      ['A', 'B', 'C', 'D'].forEach((l, i) => {
+        let yBase = 500 + (i * 320);
+        fabricCanvas.add(createText(`${l}) ${data.en?.options?.[l]}`, yBase, "white", 45, 'Montserrat'));
+        fabricCanvas.add(createText(data.ur?.options?.[l], yBase + 85, "#D4AF37", 45, 'Amiri'));
+        fabricCanvas.add(createText(data.hi?.options?.[l], yBase + 160, "#aaa", 30, 'Source Sans 3'));
+      });
+    }
+    else if (slideNum === 3) {
+      const a = data.en?.a;
+      fabricCanvas.add(createText("CORRECT ANSWER", 400, "#D4AF37", 80, 'Montserrat'));
+      fabricCanvas.add(createText(`${a}) ${data.en?.options?.[a]}`, 700, "white", 75, 'Montserrat'));
+      fabricCanvas.add(createText(data.ur?.options?.[a], 950, "#ffffff", 80, 'Amiri'));
+      fabricCanvas.add(createText(data.hi?.options?.[a], 1250, "#aaa", 55, 'Source Sans 3'));
+    }
+    else if (slideNum === 4) {
+      fabricCanvas.add(createText("EXPLANATION", 250, "#D4AF37", 65, 'Montserrat'));
+      fabricCanvas.add(createText(data.en?.exp, 450, "white", 40, 'Source Sans 3'));
+      fabricCanvas.add(createText(data.ur?.exp, 1000, "#ffffff", 55, 'Amiri'));
+      fabricCanvas.add(createText(data.hi?.exp, 1500, "#aaa", 35, 'Source Sans 3'));
+    }
     fabricCanvas.renderAll();
   };
 
-  const downloadImage = () => {
-    if (!fabricCanvas) return;
-    const dataURL = fabricCanvas.toDataURL({ format: 'jpeg', quality: 0.9 });
-    const link = document.createElement('a');
-    link.download = 'Islamic_Post.jpg';
-    link.href = dataURL;
-    link.click();
-  };
-
   return (
-    <div
-      style={{
-        background: '#111',
-        color: 'white',
-        minHeight: '100vh',
-        padding: '20px',
-        textAlign: 'center',
-      }}
-    >
-      <h2 style={{ color: 'gold' }}>🕌 Islamic Content Factory Pro</h2>
-      <textarea
-        style={{
-          width: '90%',
-          height: '100px',
-          background: '#222',
-          color: 'gold',
-          padding: '10px',
-          borderRadius: '8px',
-          border: '1px solid #444',
-        }}
-        placeholder="Paste JSON here..."
-        onChange={(e) => setJsonData(e.target.value)}
-      />
-      <div style={{ margin: '20px' }}>
-        <button onClick={generateSlides} style={btnStyle}>
-          🎨 Design Slide
-        </button>
-        <button
-          onClick={downloadImage}
-          style={{ ...btnStyle, background: 'white' }}
-        >
-          📥 Download JPG
-        </button>
+    <div style={{ background: '#000', minHeight: '100vh', color: 'white', padding: '20px', textAlign: 'center', fontFamily: 'Montserrat' }}>
+      <div style={panelStyle}>
+        <h2 style={{color: '#D4AF37', margin: '0 0 15px 0'}}>🕌 Islamic Content Factory Pro</h2>
+        <textarea 
+          placeholder="Paste JSON here..." 
+          onChange={(e) => setJsonData(e.target.value)}
+          style={inputStyle}
+        />
+        <div style={{ margin: '15px 0' }}>
+          {[1, 2, 3, 4].map(n => (
+            <button key={n} onClick={() => setActiveSlide(n)} style={n === activeSlide ? activeBtnStyle : btnStyle}>
+              Slide {n}
+            </button>
+          ))}
+        </div>
+        <button onClick={() => { const link = document.createElement('a'); link.download = `Slide_${activeSlide}.jpg`; link.href = fabricCanvas.toDataURL({format: 'jpeg', quality: 1}); link.click(); }} style={downloadBtnStyle}>📥 Download Slide {activeSlide}</button>
       </div>
-      <canvas
-        id="canvas"
-        style={{
-          border: '2px solid gold',
-          borderRadius: '15px',
-          maxWidth: '100%',
-        }}
-      />
+      <canvas id="canvas" style={{ border: '4px solid #222', borderRadius: '20px', maxWidth: '100%' }} />
     </div>
   );
 };
 
-const btnStyle = {
-  padding: '12px 25px',
-  margin: '5px',
-  borderRadius: '8px',
-  cursor: 'pointer',
-  fontWeight: 'bold' as const,
-  background: '#FFD700',
-  border: 'none',
-  color: 'black',
-};
+const panelStyle = { background: '#111', padding: '20px', borderRadius: '20px', border: '1px solid #333', maxWidth: '600px', margin: '0 auto 20px auto' };
+const inputStyle = { width: '100%', height: '80px', background: '#222', color: '#D4AF37', border: '1px solid #444', borderRadius: '10px', padding: '10px', boxSizing: 'border-box' as const };
+const btnStyle = { padding: '10px 20px', margin: '5px', borderRadius: '8px', cursor: 'pointer', background: '#333', color: 'white', border: 'none', fontWeight: 'bold' as const };
+const activeBtnStyle = { ...btnStyle, background: '#D4AF37', color: 'black' };
+const downloadBtnStyle = { ...btnStyle, background: 'white', color: 'black', width: '100%', marginTop: '10px' };
 
 export default App;
