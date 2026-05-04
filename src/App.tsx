@@ -107,12 +107,27 @@ const App = () => {
   const copyCaption = () => {
     try {
       const data = JSON.parse(jsonData.replace(/```json|```/g, "").trim());
-      const cap = `❓ ${data.en.q}\n\n✅ Answer: ${data.en.a}\n\n💡 ${data.en.exp}\n\n#IslamicQuiz #Deen #MuslimCommunity`;
-      navigator.clipboard.writeText(cap);
-      alert("Caption Copied!");
-    } catch(e) { alert("Paste JSON first"); }
-  };
+      
+      // Hashtag Strategy: 5-5-5-2 Split
+      const highReach = ["#IslamicQuiz", "#Deen", "#Knowledge", "#ExplorePage", "#Viral"];
+      const mediumReach = ["#IslamicReminders", "#MuslimUmmah", "#DailyHadith", "#QuranVerses", "#IslamicEducation"];
+      const nicheReach = ["#ProphetStories", "#IslamicHistory", "#SunnahLife", "#IslamicPosts", "#Dawah"];
+      const localReach = ["#MuslimsInIndia", "#BangaloreMuslims"]; // Based on your region
 
+      const allHashtags = [...highReach, ...mediumReach, ...nicheReach, ...localReach].join(" ");
+
+      const fullCaption = `❓ QUESTION:\n${data.en.q}\n\n` +
+                          `✅ ANSWER: ${data.en.a}) ${data.en.options[data.en.a]}\n\n` +
+                          `💡 DID YOU KNOW?\n${data.en.exp}\n\n` +
+                          `. . .\n` +
+                          `${allHashtags}`;
+
+      navigator.clipboard.writeText(fullCaption);
+      alert("Professional Caption & Hashtags Copied! 🚀");
+    } catch(e) { 
+      alert("Please paste your JSON and click 'Start Engine' first."); 
+    }
+  };
   return (
     <div style={{ background: '#000', minHeight: '100vh', color: 'white', padding: '20px', textAlign: 'center' }}>
       <div style={panelStyle}>
