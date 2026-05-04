@@ -141,4 +141,6 @@ const inputStyle = { width: '100%', height: '70px', background: '#111', color: '
 const btnStyle = { padding: '10px 15px', margin: '5px', borderRadius: '8px', cursor: 'pointer', background: '#222', color: 'white', border: 'none', fontWeight: 'bold' as any };
 const startBtnStyle = { ...btnStyle, background: '#D4AF37', color: 'black', width: '100%' };
 const activeBtnStyle = { ...btnStyle, background: '#D4AF37', color: 'black' };
-const downloadBtnStyle = { ...btnStyle,
+const downloadBtnStyle = { ...btnStyle, background: 'white', color: 'black' };
+
+export default App;
