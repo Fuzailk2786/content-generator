@@ -1,149 +1,184 @@
-import React, { useEffect, useState } from 'react';
-import * as fabric from 'fabric';
-import JSZip from 'jszip';
+.counter {
+  font-size: 16px;
+  padding: 5px 10px;
+  border-radius: 5px;
+  color: var(--accent);
+  background: var(--accent-bg);
+  border: 2px solid transparent;
+  transition: border-color 0.3s;
+  margin-bottom: 24px;
 
-const App = () => {
-  const [fabricCanvas, setFabricCanvas] = useState<any>(null);
-  const [jsonData, setJsonData] = useState('');
-  const [activeSlide, setActiveSlide] = useState(1);
-  const [isTransparent, setIsTransparent] = useState(false); // New Feature
+  &:hover {
+    border-color: var(--accent-border);
+  }
+  &:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+}
 
-  const bgLibrary = [
-    'https://images.unsplash.com/photo-1542810634-71277d95dcbb?q=80&w=1080',
-    'https://images.unsplash.com/photo-1564769625905-50e93615e769?q=80&w=1080',
-    'https://images.unsplash.com/photo-1590076215667-875d4ef2d97e?q=80&w=1080',
-    'https://images.unsplash.com/photo-1519817650390-64a93db51149?q=80&w=1080',
-    'https://images.unsplash.com/photo-1590076215667-875d4ef2d97e?q=80&w=1080' // Slide 5 BG
-  ];
+.hero {
+  position: relative;
 
-  useEffect(() => {
-    const canvas = new (fabric as any).fabric.StaticCanvas('canvas', {
-      width: 1080, height: 1920,
-    });
-    setFabricCanvas(canvas);
-    return () => canvas.dispose();
-  }, []);
+  .base,
+  .framework,
+  .vite {
+    inset-inline: 0;
+    margin: 0 auto;
+  }
 
-  useEffect(() => {
-    if (jsonData) handleRedraw(activeSlide);
-  }, [activeSlide, jsonData, isTransparent]);
+  .base {
+    width: 170px;
+    position: relative;
+    z-index: 0;
+  }
 
-  const handleRedraw = (slideNumber: number) => {
-    try {
-      const cleanJson = jsonData.replace(/```json|
-```/g, '').trim();
-      const data = JSON.parse(cleanJson);
-      drawSlide(slideNumber, data);
-    } catch (e) { console.log('Waiting for JSON...'); }
-  };
+  .framework,
+  .vite {
+    position: absolute;
+  }
 
-  const drawSlide = async (slideNum: number, data: any) => {
-    if (!fabricCanvas) return;
-    const f = (fabric as any).fabric;
-    fabricCanvas.clear();
+  .framework {
+    z-index: 1;
+    top: 34px;
+    height: 28px;
+    transform: perspective(2000px) rotateZ(300deg) rotateX(44deg) rotateY(39deg)
+      scale(1.4);
+  }
 
-    if (!isTransparent) {
-      const bgUrl = bgLibrary[slideNum - 1] || bgLibrary[0];
-      await new Promise((resolve) => {
-        f.Image.fromURL(bgUrl, (img: any) => {
-          img.set({ originX: 'center', originY: 'center', left: 540, top: 960 });
-          img.scale(Math.max(1080 / img.width, 1920 / img.height));
-          fabricCanvas.add(img);
-          resolve(true);
-        }, { crossOrigin: 'anonymous' });
-      });
+  .vite {
+    z-index: 0;
+    top: 107px;
+    height: 26px;
+    width: auto;
+    transform: perspective(2000px) rotateZ(300deg) rotateX(40deg) rotateY(39deg)
+      scale(0.8);
+  }
+}
 
-      fabricCanvas.add(new f.Rect({
-        left: 540, top: 960, width: 1080, height: 1920,
-        fill: 'rgba(0,0,0,0.7)', originX: 'center', originY: 'center'
-      }));
+#center {
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+  place-content: center;
+  place-items: center;
+  flex-grow: 1;
 
-      fabricCanvas.add(new f.Rect({
-        left: 540, top: 960, width: 950, height: 1780,
-        fill: 'transparent', stroke: '#D4AF37', strokeWidth: 12, originX: 'center', originY: 'center', rx: 25
-      }));
+  @media (max-width: 1024px) {
+    padding: 32px 20px 24px;
+    gap: 18px;
+  }
+}
+
+#next-steps {
+  display: flex;
+  border-top: 1px solid var(--border);
+  text-align: left;
+
+  & > div {
+    flex: 1 1 0;
+    padding: 32px;
+    @media (max-width: 1024px) {
+      padding: 24px 20px;
+    }
+  }
+
+  .icon {
+    margin-bottom: 16px;
+    width: 22px;
+    height: 22px;
+  }
+
+  @media (max-width: 1024px) {
+    flex-direction: column;
+    text-align: center;
+  }
+}
+
+#docs {
+  border-right: 1px solid var(--border);
+
+  @media (max-width: 1024px) {
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+}
+
+#next-steps ul {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  gap: 8px;
+  margin: 32px 0 0;
+
+  .logo {
+    height: 18px;
+  }
+
+  a {
+    color: var(--text-h);
+    font-size: 16px;
+    border-radius: 6px;
+    background: var(--social-bg);
+    display: flex;
+    padding: 6px 12px;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    transition: box-shadow 0.3s;
+
+    &:hover {
+      box-shadow: var(--shadow);
+    }
+    .button-icon {
+      height: 18px;
+      width: 18px;
+    }
+  }
+
+  @media (max-width: 1024px) {
+    margin-top: 20px;
+    flex-wrap: wrap;
+    justify-content: center;
+
+    li {
+      flex: 1 1 calc(50% - 8px);
     }
 
-    let currentY = 350;
-    const addText = (text: string, color: string, size: number, font: string, spacing = 40) => {
-      const tb = new f.Textbox(text || '', {
-        left: 540, top: currentY, width: 850, originX: 'center',
-        fontSize: size, fill: color, textAlign: 'center',
-        fontFamily: font, fontWeight: 'bold', shadow: isTransparent ? '' : '3px 3px 15px rgba(0,0,0,1)'
-      });
-      fabricCanvas.add(tb);
-      currentY += (tb.height + spacing);
-    };
-
-    if (slideNum === 1) {
-      addText(data.en.q, '#D4AF37', 60, 'Montserrat', 60);
-      addText(data.ur.q, '#ffffff', 75, 'Amiri', 60);
-      addText(data.hi.q, '#ccc', 45, 'Source Sans 3', 0);
-    } else if (slideNum === 2) {
-      addText('OPTIONS', '#D4AF37', 55, 'Montserrat', 80);
-      ['A', 'B', 'C', 'D'].forEach(l => {
-        addText(`${l}) ${data.en.options[l]}`, 'white', 45, 'Montserrat', 10);
-        addText(data.ur.options[l], '#D4AF37', 40, 'Amiri', 40);
-      });
-    } else if (slideNum === 3) {
-      addText('CORRECT ANSWER', '#D4AF37', 80, 'Montserrat', 80);
-      addText(`${data.en.a}) ${data.en.options[data.en.a]}`, 'white', 90, 'Montserrat', 60);
-      addText(data.ur.options[data.en.a], '#ffffff', 85, 'Amiri', 0);
-    } else if (slideNum === 4) {
-      addText('EXPLANATION', '#D4AF37', 65, 'Montserrat', 80);
-      addText(data.en.exp, 'white', 42, 'Source Sans 3', 60);
-      addText(data.ur.exp, '#eee', 52, 'Amiri', 0);
-    } else if (slideNum === 5) {
-      currentY = 500;
-      addText("Did you know this already?", '#D4AF37', 60, 'Montserrat', 40);
-      addText("Comment 'SubhanAllah' if you learned something new today!", 'white', 45, 'Source Sans 3', 150);
-      addText("🔖 Save this to your 'Knowledge' folder", '#ffffff', 40, 'Montserrat', 30);
-      addText("👥 Tag a friend to test their Deen", '#D4AF37', 40, 'Montserrat', 0);
+    a {
+      width: 100%;
+      justify-content: center;
+      box-sizing: border-box;
     }
-    fabricCanvas.renderAll();
-  };
+  }
+}
 
-  const downloadZip = async () => {
-    const zip = new JSZip();
-    const data = JSON.parse(jsonData.replace(/```json|```/g, '').trim());
-    for (let i = 1; i <= 5; i++) {
-      await drawSlide(i, data);
-      const dataURL = fabricCanvas.toDataURL({ format: 'png' });
-      zip.file(`Slide_${i}.png`, dataURL.split(',')[1], { base64: true });
-    }
-    const content = await zip.generateAsync({ type: "blob" });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(content);
-    link.download = isTransparent ? "Transparent_Assets.zip" : "Islamic_Carousel.zip";
-    link.click();
-    handleRedraw(activeSlide);
-  };
+#spacer {
+  height: 88px;
+  border-top: 1px solid var(--border);
+  @media (max-width: 1024px) {
+    height: 48px;
+  }
+}
 
-  return (
-    <div style={{ background: '#000', minHeight: '100vh', color: 'white', padding: '20px', textAlign: 'center' }}>
-      <div style={panelStyle}>
-        <h2 style={{ color: '#D4AF37' }}>🕌 Islamic Content Studio Pro</h2>
-        <textarea placeholder="Paste JSON..." onChange={(e) => setJsonData(e.target.value)} style={inputStyle} />
-        <div style={{ margin: '15px 0', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
-          <input type="checkbox" id="trans" checked={isTransparent} onChange={(e) => setIsTransparent(e.target.checked)} />
-          <label htmlFor="trans" style={{ color: '#00ffcc', fontWeight: 'bold' }}>Enable Transparent Mode (for Video Editing)</label>
-        </div>
-        <div style={{ display: 'flex', justifyContent: 'center', gap: '5px', flexWrap: 'wrap' }}>
-          {[1, 2, 3, 4, 5].map(n => (
-            <button key={n} onClick={() => setActiveSlide(n)} style={n === activeSlide ? activeBtnStyle : btnStyle}>Slide {n}</button>
-          ))}
-        </div>
-        <button onClick={downloadZip} style={zipBtnStyle}>📦 Download All (5 Slides) as ZIP</button>
-      </div>
-      <canvas id="canvas" style={{ border: '4px solid #1a1a1a', borderRadius: '25px', maxWidth: '100%' }} />
-    </div>
-  );
-};
+.ticks {
+  position: relative;
+  width: 100%;
 
-const panelStyle = { background: '#0a0a0a', padding: '20px', borderRadius: '25px', border: '1px solid #333', maxWidth: '600px', margin: '0 auto 20px auto' };
-const inputStyle = { width: '100%', height: '60px', background: '#111', color: 'gold', border: '1px solid #444', borderRadius: '10px', padding: '10px' };
-const btnStyle = { padding: '10px 15px', margin: '5px', borderRadius: '8px', cursor: 'pointer', background: '#222', color: 'white', border: 'none', fontWeight: 'bold' as any };
-const activeBtnStyle = { ...btnStyle, background: '#D4AF37', color: 'black' };
-const zipBtnStyle = { ...btnStyle, background: '#00ffcc', color: 'black', width: '100%', marginTop: '10px' };
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    top: -4.5px;
+    border: 5px solid transparent;
+  }
 
-export default App;
+  &::before {
+    left: 0;
+    border-left-color: var(--border);
+  }
+  &::after {
+    right: 0;
+    border-right-color: var(--border);
+  }
+}
