@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import * as fabric from 'fabric';
-import JSZip from 'jszip';
+import JSZip from 'jszip'; // <--- THIS LINE IS CRITICAL
 
 const App = () => {
   const [fabricCanvas, setFabricCanvas] = useState<any>(null);
