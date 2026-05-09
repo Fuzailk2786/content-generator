@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import * as fabric from 'fabric';
-import JSZip from 'jszip'; // <--- THIS LINE IS CRITICAL
+import JSZip from 'jszip'; // <--- THIS IS CRITICAL FOR THE BUILD
 
 const App = () => {
   const [fabricCanvas, setFabricCanvas] = useState<any>(null);
   const [jsonData, setJsonData] = useState('');
   const [activeSlide, setActiveSlide] = useState(1);
-  const [isTransparent, setIsTransparent] = useState(false); // New Feature
+  const [isTransparent, setIsTransparent] = useState(false); // <--- TRANSPARENT TOGGLE STATE
 
   const bgLibrary = [
     'https://images.unsplash.com/photo-1542810634-71277d95dcbb?q=80&w=1080',
@@ -30,8 +30,7 @@ const App = () => {
 
   const handleRedraw = (slideNumber: number) => {
     try {
-      const cleanJson = jsonData.replace(/```json|
-```/g, '').trim();
+      const cleanJson = jsonData.replace(/```json|```/g, '').trim();
       const data = JSON.parse(cleanJson);
       drawSlide(slideNumber, data);
     } catch (e) { console.log('Waiting for JSON...'); }
@@ -42,6 +41,11 @@ const App = () => {
     const f = (fabric as any).fabric;
     fabricCanvas.clear();
 
+    // Reset currentY position based on slide
+    let currentY = 350;
+
+    // --- BACKGROUND & FRAME LOGIC ---
+    // If not transparent, load the background and the gold frame
     if (!isTransparent) {
       const bgUrl = bgLibrary[slideNum - 1] || bgLibrary[0];
       await new Promise((resolve) => {
@@ -62,39 +66,45 @@ const App = () => {
         left: 540, top: 960, width: 950, height: 1780,
         fill: 'transparent', stroke: '#D4AF37', strokeWidth: 12, originX: 'center', originY: 'center', rx: 25
       }));
+    } else {
+        // Essential: Set canvas to transparent explicitly for clear PNGs
+        fabricCanvas.backgroundColor = 'transparent';
     }
 
-    let currentY = 350;
+    // --- HELPER FUNCTION FOR DYNAMIC STACKING ---
     const addText = (text: string, color: string, size: number, font: string, spacing = 40) => {
       const tb = new f.Textbox(text || '', {
         left: 540, top: currentY, width: 850, originX: 'center',
         fontSize: size, fill: color, textAlign: 'center',
-        fontFamily: font, fontWeight: 'bold', shadow: isTransparent ? '' : '3px 3px 15px rgba(0,0,0,1)'
+        fontFamily: font, fontWeight: 'bold', 
+        // Remove shadow if transparent
+        shadow: isTransparent ? '' : '3px 3px 15px rgba(0,0,0,1)'
       });
       fabricCanvas.add(tb);
       currentY += (tb.height + spacing);
     };
 
-    if (slideNum === 1) {
+    // --- SLIDE LOGIC ---
+    if (slideNum === 1) { // 1. QUESTION
       addText(data.en.q, '#D4AF37', 60, 'Montserrat', 60);
       addText(data.ur.q, '#ffffff', 75, 'Amiri', 60);
       addText(data.hi.q, '#ccc', 45, 'Source Sans 3', 0);
-    } else if (slideNum === 2) {
+    } else if (slideNum === 2) { // 2. OPTIONS
       addText('OPTIONS', '#D4AF37', 55, 'Montserrat', 80);
       ['A', 'B', 'C', 'D'].forEach(l => {
         addText(`${l}) ${data.en.options[l]}`, 'white', 45, 'Montserrat', 10);
         addText(data.ur.options[l], '#D4AF37', 40, 'Amiri', 40);
       });
-    } else if (slideNum === 3) {
+    } else if (slideNum === 3) { // 3. CORRECT ANSWER
       addText('CORRECT ANSWER', '#D4AF37', 80, 'Montserrat', 80);
       addText(`${data.en.a}) ${data.en.options[data.en.a]}`, 'white', 90, 'Montserrat', 60);
       addText(data.ur.options[data.en.a], '#ffffff', 85, 'Amiri', 0);
-    } else if (slideNum === 4) {
+    } else if (slideNum === 4) { // 4. EXPLANATION
       addText('EXPLANATION', '#D4AF37', 65, 'Montserrat', 80);
       addText(data.en.exp, 'white', 42, 'Source Sans 3', 60);
       addText(data.ur.exp, '#eee', 52, 'Amiri', 0);
-    } else if (slideNum === 5) {
-      currentY = 500;
+    } else if (slideNum === 5) { // 5. ENGAGEMENT (NEW)
+      currentY = 500; // Reset higher for cleaner layout
       addText("Did you know this already?", '#D4AF37', 60, 'Montserrat', 40);
       addText("Comment 'SubhanAllah' if you learned something new today!", 'white', 45, 'Source Sans 3', 150);
       addText("🔖 Save this to your 'Knowledge' folder", '#ffffff', 40, 'Montserrat', 30);
@@ -104,30 +114,42 @@ const App = () => {
   };
 
   const downloadZip = async () => {
-    const zip = new JSZip();
+    if (!jsonData) return alert("Paste JSON first");
+    const zip = new JSZip(); // Uses the critical import
     const data = JSON.parse(jsonData.replace(/```json|```/g, '').trim());
+    
+    alert(`Generating ZIP... Please wait.`);
+
+    // Loop through 5 slides
     for (let i = 1; i <= 5; i++) {
       await drawSlide(i, data);
-      const dataURL = fabricCanvas.toDataURL({ format: 'png' });
-      zip.file(`Slide_${i}.png`, dataURL.split(',')[1], { base64: true });
+      const dataURL = fabricCanvas.toDataURL({ format: isTransparent ? 'png' : 'jpeg' });
+      zip.file(`Slide_${i}.${isTransparent ? 'png' : 'jpg'}`, dataURL.split(',')[1], { base64: true });
     }
+    
     const content = await zip.generateAsync({ type: "blob" });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(content);
-    link.download = isTransparent ? "Transparent_Assets.zip" : "Islamic_Carousel.zip";
+    // Custom Filename
+    link.download = isTransparent ? `Modular_Assets_${activeSlide}.zip` : `Islamic_Carousel_${activeSlide}.zip`;
     link.click();
+    
+    // Return to current view
     handleRedraw(activeSlide);
   };
 
   return (
     <div style={{ background: '#000', minHeight: '100vh', color: 'white', padding: '20px', textAlign: 'center' }}>
       <div style={panelStyle}>
-        <h2 style={{ color: '#D4AF37' }}>🕌 Islamic Content Studio Pro</h2>
-        <textarea placeholder="Paste JSON..." onChange={(e) => setJsonData(e.target.value)} style={inputStyle} />
+        <h2 style={{ color: '#D4AF37', margin: '0 0 10px 0' }}>🕌 Islamic Content Studio Pro</h2>
+        <textarea placeholder="Paste JSON here..." onChange={(e) => setJsonData(e.target.value)} style={inputStyle} />
+        
+        {/* --- TRANSPARENT MODE UI --- */}
         <div style={{ margin: '15px 0', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
-          <input type="checkbox" id="trans" checked={isTransparent} onChange={(e) => setIsTransparent(e.target.checked)} />
-          <label htmlFor="trans" style={{ color: '#00ffcc', fontWeight: 'bold' }}>Enable Transparent Mode (for Video Editing)</label>
+          <input type="checkbox" id="trans" checked={isTransparent} onChange={(e) => setIsTransparent(e.target.checked)} style={{cursor: 'pointer', width: '18px', height: '18px'}} />
+          <label htmlFor="trans" style={{ color: '#00ffcc', fontWeight: 'bold', cursor: 'pointer' }}>Enable Transparent Mode (Modular Video Assets)</label>
         </div>
+
         <div style={{ display: 'flex', justifyContent: 'center', gap: '5px', flexWrap: 'wrap' }}>
           {[1, 2, 3, 4, 5].map(n => (
             <button key={n} onClick={() => setActiveSlide(n)} style={n === activeSlide ? activeBtnStyle : btnStyle}>Slide {n}</button>
@@ -135,14 +157,15 @@ const App = () => {
         </div>
         <button onClick={downloadZip} style={zipBtnStyle}>📦 Download All (5 Slides) as ZIP</button>
       </div>
-      <canvas id="canvas" style={{ border: '4px solid #1a1a1a', borderRadius: '25px', maxWidth: '100%' }} />
+      <canvas id="canvas" style={{ border: '4px solid #1a1a1a', borderRadius: '25px', maxWidth: '100%', marginTop: '20px' }} />
     </div>
   );
 };
 
-const panelStyle = { background: '#0a0a0a', padding: '20px', borderRadius: '25px', border: '1px solid #333', maxWidth: '600px', margin: '0 auto 20px auto' };
-const inputStyle = { width: '100%', height: '60px', background: '#111', color: 'gold', border: '1px solid #444', borderRadius: '10px', padding: '10px' };
-const btnStyle = { padding: '10px 15px', margin: '5px', borderRadius: '8px', cursor: 'pointer', background: '#222', color: 'white', border: 'none', fontWeight: 'bold' as any };
+// Professional UI Styles (kept internal to App for stability)
+const panelStyle = { background: '#0a0a0a', padding: '25px', borderRadius: '30px', border: '1px solid #1a1a1a', maxWidth: '600px', margin: '0 auto 20px auto' };
+const inputStyle = { width: '100%', height: '70px', background: '#111', color: 'gold', border: '1px solid #333', borderRadius: '12px', padding: '12px', boxSizing: 'border-box' as any };
+const btnStyle = { padding: '10px 18px', margin: '5px', borderRadius: '10px', cursor: 'pointer', background: '#222', color: 'white', border: 'none', fontWeight: 'bold' as any };
 const activeBtnStyle = { ...btnStyle, background: '#D4AF37', color: 'black' };
 const zipBtnStyle = { ...btnStyle, background: '#00ffcc', color: 'black', width: '100%', marginTop: '10px' };
 
