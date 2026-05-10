@@ -52,46 +52,18 @@ const canvas = new (fabric as any).fabric.StaticCanvas('canvas', {
         f.Image.fromURL(
           bgUrl,
           (img: any) => {
-            img.set({
-              originX: 'center',
-              originY: 'center',
-              left: 540,
-              top: 960,
-            });
-            img.scale(Math.max(1080 / img.width, 1920 / img.height));
-            fabricCanvas.add(img);
-            resolve(true);
-          },
-          { crossOrigin: 'anonymous' }
-        );
-      });
+            // Inside drawSlide, update the centering and rectangle heights
+img.set({ originX: 'center', originY: 'center', left: 540, top: 675 }); // 1350 / 2 = 675
+...
+fabricCanvas.add(new f.Rect({
+  left: 540, top: 675, width: 1080, height: 1350, // Full background overlay
+  fill: 'rgba(0,0,0,0.7)', originX: 'center', originY: 'center'
+}));
 
-      fabricCanvas.add(
-        new f.Rect({
-          left: 540,
-          top: 960,
-          width: 1080,
-          height: 1920,
-          fill: 'rgba(0,0,0,0.7)',
-          originX: 'center',
-          originY: 'center',
-        })
-      );
-
-      fabricCanvas.add(
-        new f.Rect({
-          left: 540,
-          top: 960,
-          width: 950,
-          height: 1780,
-          fill: 'transparent',
-          stroke: '#D4AF37',
-          strokeWidth: 12,
-          originX: 'center',
-          originY: 'center',
-          rx: 25,
-        })
-      );
+fabricCanvas.add(new f.Rect({
+  left: 540, top: 675, width: 950, height: 1250, // Gold border adjusted for shorter height
+  fill: 'transparent', stroke: '#D4AF37', strokeWidth: 12, originX: 'center', originY: 'center', rx: 25
+}));
     } else {
       fabricCanvas.backgroundColor = 'transparent';
     }
