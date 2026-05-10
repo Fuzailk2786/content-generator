@@ -17,10 +17,10 @@ const App = () => {
   ];
 
   useEffect(() => {
-    const canvas = new (fabric as any).fabric.StaticCanvas('canvas', {
-      width: 1080,
-      height: 1920,
-    });
+const canvas = new (fabric as any).fabric.StaticCanvas('canvas', {
+  width: 1080, 
+  height: 1350, // Changed from 1920 to 1350 for 4:5 ratio
+});
     setFabricCanvas(canvas);
     return () => canvas.dispose();
   }, []);
