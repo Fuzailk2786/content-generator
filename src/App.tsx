@@ -18,7 +18,7 @@ const App = () => {
 
   useEffect(() => {
     const canvas = new (fabric as any).fabric.StaticCanvas('canvas', {
-      width: 1080, height: 1350, // Corrected 4:5 ratio
+      width: 1080, height: 1350,
     });
     setFabricCanvas(canvas);
     return () => canvas.dispose();
@@ -114,16 +114,7 @@ const App = () => {
     try {
       const data = JSON.parse(jsonData.replace(/```json|```/g, '').trim());
       const tags = "#IslamicQuiz #Deen #Knowledge #ExplorePage #Viral #IslamicReminders #MuslimUmmah #DailyHadith #QuranVerses #IslamicEducation #ProphetStories #IslamicHistory #SunnahLife #IslamicPosts #Dawah #MuslimsInIndia #BangaloreMuslims";
-      
-      const caption = `🌟 TEST YOUR KNOWLEDGE\n\n` +
-        `❓ THE QUESTION:\n${data.en.q}\n\n` +
-        `✅ THE ANSWER:\nSlide through to find the answer and a detailed explanation! 😉\n\n` +
-        `💡 DID YOU KNOW?\n${data.en.exp}\n\n` +
-        `💬 Drop your answer in the comments before you slide!\n` +
-        `🔖 SAVE this for your daily knowledge boost.\n` +
-        `🚀 SHARE with your friends and family!\n\n` +
-        `. . .\n${tags}`;
-
+      const caption = `🌟 TEST YOUR KNOWLEDGE\n\n❓ THE QUESTION:\n${data.en.q}\n\n✅ THE ANSWER:\nSlide through to find the answer and a detailed explanation! 😉\n\n💡 DID YOU KNOW?\n${data.en.exp}\n\n💬 Drop your answer in the comments before you slide!\n🔖 SAVE this for your daily knowledge boost.\n🚀 SHARE with your friends and family!\n\n. . .\n${tags}`;
       navigator.clipboard.writeText(caption);
       alert('Viral Caption & Hashtags Copied! 🚀');
     } catch (e) { alert("Paste JSON first"); }
@@ -148,40 +139,76 @@ const App = () => {
   };
 
   return (
-    <div style={{ background: '#000', minHeight: '100vh', color: 'white', padding: '20px', textAlign: 'center' }}>
+    <div style={{ background: '#000', minHeight: '100vh', color: 'white', padding: '10px', textAlign: 'center' }}>
       <div style={panelStyle}>
-        <h2 style={{ color: '#D4AF37' }}>🕌 Islamic Content Studio Pro</h2>
+        <h2 style={{ color: '#D4AF37', fontSize: '1.4rem' }}>🕌 Islamic Content Studio Pro</h2>
         <textarea placeholder="Paste JSON here..." onChange={(e) => setJsonData(e.target.value)} style={inputStyle} />
         
-        <div style={{ margin: '15px 0', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
-          <input type="checkbox" id="trans" checked={isTransparent} onChange={(e) => setIsTransparent(e.target.checked)} />
-          <label htmlFor="trans" style={{ color: '#00ffcc', fontWeight: 'bold' }}>Enable Transparent Mode</label>
+        <div style={{ margin: '15px 0', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+          <input type="checkbox" id="trans" checked={isTransparent} onChange={(e) => setIsTransparent(e.target.checked)} style={{width: '20px', height: '20px'}}/>
+          <label htmlFor="trans" style={{ color: '#00ffcc', fontWeight: 'bold', fontSize: '0.9rem' }}>Enable Transparent Mode</label>
         </div>
 
-        <div style={{ display: 'flex', justifyContent: 'center', gap: '5px', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '5px', flexWrap: 'wrap', marginBottom: '15px' }}>
           {[1, 2, 3, 4, 5].map(n => (
             <button key={n} onClick={() => setActiveSlide(n)} style={n === activeSlide ? activeBtnStyle : btnStyle}>Slide {n}</button>
           ))}
         </div>
 
-        <div style={{ marginTop: '15px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '10px' }}>
-            <button onClick={copyCaption} style={btnStyle}>📝 Copy Caption</button>
-            <button onClick={() => { const link = document.createElement('a'); link.download = `Slide_${activeSlide}.jpg`; link.href = fabricCanvas.toDataURL({ format: 'jpeg', quality: 1 }); link.click(); }} style={downloadBtnStyle}>📥 Download Slide</button>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '5px', flexWrap: 'wrap' }}>
+            <button onClick={copyCaption} style={actionBtnStyle}>📝 Caption</button>
+            <button onClick={() => { const link = document.createElement('a'); link.download = `Slide_${activeSlide}.jpg`; link.href = fabricCanvas.toDataURL({ format: 'jpeg', quality: 1 }); link.click(); }} style={actionBtnStyle}>📥 Slide</button>
+            <button onClick={downloadZip} style={zipBtnStyle}>📦 Download ZIP (All 5)</button>
           </div>
-          <button onClick={downloadZip} style={zipBtnStyle}>📦 Download All (5 Slides) as ZIP</button>
         </div>
       </div>
-      <canvas id="canvas" style={{ border: '4px solid #1a1a1a', borderRadius: '25px', maxWidth: '100%', marginTop: '20px' }} />
+      
+      {/* Canvas Wrapper to ensure responsiveness on mobile */}
+      <div style={{ marginTop: '20px', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+        <canvas id="canvas" style={{ border: '4px solid #1a1a1a', borderRadius: '25px', width: '100%', maxWidth: '500px', height: 'auto' }} />
+      </div>
     </div>
   );
 };
 
-const panelStyle = { background: '#0a0a0a', padding: '25px', borderRadius: '30px', border: '1px solid #1a1a1a', maxWidth: '600px', margin: '0 auto 20px auto' };
-const inputStyle = { width: '100%', height: '70px', background: '#111', color: 'gold', border: '1px solid #333', borderRadius: '12px', padding: '12px', boxSizing: 'border-box' as any };
-const btnStyle = { padding: '10px 18px', margin: '5px', borderRadius: '10px', cursor: 'pointer', background: '#222', color: 'white', border: 'none', fontWeight: 'bold' as any };
+// --- STYLES UPDATED FOR RESPONSIVENESS ---
+const panelStyle = { 
+  background: '#0a0a0a', 
+  padding: '15px', 
+  borderRadius: '20px', 
+  border: '1px solid #1a1a1a', 
+  maxWidth: '600px', 
+  margin: '0 auto 10px auto',
+  width: '100%',
+  boxSizing: 'border-box'
+};
+
+const inputStyle = { 
+  width: '100%', 
+  height: '70px', 
+  background: '#111', 
+  color: 'gold', 
+  border: '1px solid #333', 
+  borderRadius: '10px', 
+  padding: '10px', 
+  boxSizing: 'border-box' as any,
+  fontSize: '14px'
+};
+
+const btnBase = { 
+  padding: '8px 12px', 
+  borderRadius: '8px', 
+  cursor: 'pointer', 
+  border: 'none', 
+  fontWeight: 'bold' as any,
+  fontSize: '13px',
+  transition: '0.2s'
+};
+
+const btnStyle = { ...btnBase, background: '#222', color: 'white', margin: '3px' };
 const activeBtnStyle = { ...btnStyle, background: '#D4AF37', color: 'black' };
-const downloadBtnStyle = { ...btnStyle, background: 'white', color: 'black' };
-const zipBtnStyle = { ...btnStyle, background: '#00ffcc', color: 'black', width: '100%' };
+const actionBtnStyle = { ...btnBase, background: 'white', color: 'black', flex: '1 1 100px' };
+const zipBtnStyle = { ...btnBase, background: '#00ffcc', color: 'black', width: '100%', marginTop: '5px' };
 
 export default App;
